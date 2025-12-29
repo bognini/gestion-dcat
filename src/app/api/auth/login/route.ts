@@ -1,0 +1,40 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { authenticateUser, createSession, setSessionCookie } from '@/lib/auth';
+
+export async function POST(request: NextRequest) {
+  try {
+    const { usernameOrEmail, password } = await request.json();
+
+    if (!usernameOrEmail || !password) {
+      return NextResponse.json(
+        { error: 'Identifiant et mot de passe requis' },
+        { status: 400 }
+      );
+    }
+
+    const user = await authenticateUser(usernameOrEmail, password);
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Identifiants invalides' },
+        { status: 401 }
+      );
+    }
+
+    // Create session
+    const userAgent = request.headers.get('user-agent') || undefined;
+    const forwarded = request.headers.get('x-forwarded-for');
+    const ipAddress = forwarded ? forwarded.split(',')[0] : request.headers.get('x-real-ip') || undefined;
+    
+    const token = await createSession(user.id, userAgent, ipAddress);
+    await setSessionCookie(token);
+
+    return NextResponse.json({ user });
+  } catch (error) {
+    console.error('Login error:', error);
+    return NextResponse.json(
+      { error: 'Erreur lors de la connexion' },
+      { status: 500 }
+    );
+  }
+}

@@ -1,0 +1,20 @@
+# Development override - use with: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+services:
+  web:
+    build:
+      target: dependency-stage
+    command: npm run dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    labels:
+      - "traefik.enable=false"
+
+  traefik:
+    profiles:
+      - production
