@@ -1,0 +1,23 @@
+# Database only - for local development
+# Usage: docker compose -f docker-compose.db.yml up -d
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: gestion_dcat_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-admindcatdb}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-REDACTED_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-gestion_dcat}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admindcatdb} -d ${POSTGRES_DB:-gestion_dcat}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
