@@ -2,11 +2,12 @@ name: Deploy to Production
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
+  # Disabled auto-deploy - using manual deployment
+  # push:
+  #   branches: [main]
+  #   paths-ignore:
+  #     - '**.md'
+  #     - 'docs/**'
 
 jobs:
   deploy:
@@ -25,11 +26,10 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
-            cd /opt/gestion-dcat
+            cd ~/gestion-dcat
             git pull origin main
-            docker compose pull
-            docker compose up -d --build
-            docker compose exec -T web npx prisma migrate deploy
+            docker compose -f docker-compose.prod.yml up -d --build
+            docker compose -f docker-compose.prod.yml exec -T web npx prisma migrate deploy || true
             docker system prune -f
 
       - name: Verify deployment
