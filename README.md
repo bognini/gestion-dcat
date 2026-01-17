@@ -2,6 +2,15 @@
 
 Application ERP complète pour la gestion interne de DCAT - Administration, Stock, Projets, Interventions et Marketing.
 
+## 🌐 Production URLs
+
+| Service | URL |
+|---------|-----|
+| **Gestion App** | https://gestion.dcat.ci |
+| **E-Market Store** | https://emarket.dcat.ci |
+
+> 📚 **Full deployment documentation**: See [docs/DEPLOYMENT-GUIDE.md](docs/DEPLOYMENT-GUIDE.md) for server configs, Docker setup, environment variables, and deployment steps.
+
 ## 🚀 Fonctionnalités
 
 - **Administration** : Gestion administrative, Finance & Comptabilité, Ressources Humaines
@@ -63,7 +72,7 @@ SMTP_PASS=your_password
 SMTP_FROM=noreply@dcat.ci
 
 # App URL
-NEXT_PUBLIC_APP_URL=https://testerp.dcat.ci
+NEXT_PUBLIC_APP_URL=https://gestion.dcat.ci
 ```
 
 ### 3. Installation locale
@@ -121,7 +130,7 @@ docker compose logs -f web
 
 ## 🌐 Configuration DNS
 
-Pour le test, configurer `testerp.dcat.ci` vers l'IP de votre VM sur le port **3000** (ou 80/443 si Traefik est utilisé).
+Les domaines `gestion.dcat.ci` et `emarket.dcat.ci` sont configurés via Nginx Proxy Manager. Voir [docs/DEPLOYMENT-GUIDE.md](docs/DEPLOYMENT-GUIDE.md) pour les détails.
 
 ## 📁 Structure du projet
 
