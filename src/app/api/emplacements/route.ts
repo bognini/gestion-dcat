@@ -12,6 +12,7 @@ export async function GET() {
     const emplacements = await prisma.emplacement.findMany({
       orderBy: { nom: 'asc' },
       include: {
+        categorie: true,
         _count: { select: { produits: true } },
       },
     });
@@ -49,9 +50,10 @@ export async function POST(request: NextRequest) {
         nom: data.nom.trim(),
         description: data.description?.trim() || null,
         bureau: data.bureau || null,
-        armoire: data.armoire || null,
-        aile: data.aile || null,
-        etagere: data.etagere || null,
+        categorieId: data.categorieId || null,
+      },
+      include: {
+        categorie: true,
       },
     });
 

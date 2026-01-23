@@ -25,6 +25,12 @@ interface SelectOption {
   nom: string;
 }
 
+interface EmplacementOption {
+  id: string;
+  nom: string;
+  bureau: string | null;
+}
+
 interface Modele extends SelectOption {
   marque: { id: string; nom: string };
   famille: { 
@@ -58,7 +64,7 @@ export default function ModifierProduitPage({ params }: { params: Promise<{ id: 
   const [familles, setFamilles] = useState<{id: string; nom: string; categorieId: string}[]>([]);
   const [marques, setMarques] = useState<SelectOption[]>([]);
   const [modeles, setModeles] = useState<Modele[]>([]);
-  const [emplacements, setEmplacements] = useState<SelectOption[]>([]);
+  const [emplacements, setEmplacements] = useState<EmplacementOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [productName, setProductName] = useState('');
@@ -500,7 +506,9 @@ export default function ModifierProduitPage({ params }: { params: Promise<{ id: 
                   </SelectTrigger>
                   <SelectContent>
                     {emplacements.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>{e.nom}</SelectItem>
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.nom}{e.bureau ? ` - ${e.bureau}` : ''}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

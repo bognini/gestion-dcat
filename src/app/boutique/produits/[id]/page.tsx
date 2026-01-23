@@ -21,6 +21,7 @@ interface Produit {
   couleur: string | null;
   categorie: { id: string; nom: string } | null;
   marque: { id: string; nom: string } | null;
+  modele: { id: string; nom: string } | null;
   imageUrls: string[];
 }
 
@@ -48,9 +49,11 @@ export default function ProduitDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  const [whatsappNumber, setWhatsappNumber] = useState('2250709029625');
 
   useEffect(() => {
     fetchProduct();
+    fetchWhatsAppNumber();
   }, [params.id]);
 
   const fetchProduct = async () => {
@@ -63,6 +66,22 @@ export default function ProduitDetailPage() {
       console.error('Error fetching product:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWhatsAppNumber = async () => {
+    try {
+      const res = await fetch('/api/settings?key=whatsapp_number');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.value) {
+          // Remove spaces, dashes, and + sign to get clean number
+          const cleanNumber = data.value.replace(/[\s\-\+]/g, '');
+          setWhatsappNumber(cleanNumber);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching WhatsApp number:', error);
     }
   };
 
@@ -102,7 +121,7 @@ export default function ProduitDetailPage() {
   const displayPrice = hasPromo ? product.promoPrice! : basePrice;
   const originalPrice = basePrice;
   const discount = hasPromo && originalPrice ? Math.round((1 - product.promoPrice! / originalPrice) * 100) : 0;
-  const productName = product.marque ? `${product.marque.nom} ${product.nom}` : product.nom;
+  const productName = product.nom;
 
   const handleAddToCart = () => {
     const price = hasPromo ? product.promoPrice! : basePrice;
@@ -177,32 +196,39 @@ export default function ProduitDetailPage() {
 
         {/* Product info */}
         <div>
-          {product.categorie && (
-            <p className="text-xs text-gray-500 mb-1">{product.categorie.nom}</p>
-          )}
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">{productName}</h1>
+          {/* Line 1: Product name only (from 'Nom du produit' field) in blue */}
+          <h1 className="text-xl md:text-2xl text-blue-600 mb-1">{product.nom}</h1>
 
-          {/* Price */}
+          {/* Line 2: Marque & Modèle - smaller font, not bold */}
+          {(product.marque || product.modele) && (
+            <p className="text-sm text-gray-500 mb-3">
+              {product.marque && <span>Marque: {product.marque.nom}</span>}
+              {product.marque && product.modele && <span> | </span>}
+              {product.modele && <span>Modèle: {product.modele.nom}</span>}
+            </p>
+          )}
+
+          {/* Line 3: Price - black, bold, very visible */}
           <div className="mb-4">
             {hasPromo ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-2xl font-bold text-red-600">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-3xl font-bold text-red-600">
                     {formatPrice(displayPrice!)}
                   </span>
-                  <span className="text-base text-gray-400 line-through">
+                  <span className="text-lg text-gray-400 line-through">
                     {formatPrice(originalPrice!)}
                   </span>
-                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                  <span className="bg-red-500 text-white text-sm font-bold px-2 py-1 rounded">
                     -{discount}%
                   </span>
                 </div>
-                <p className="text-xs text-green-600 font-medium">
+                <p className="text-sm text-green-600 font-medium">
                   Économie: {formatPrice(originalPrice! - displayPrice!)}
                 </p>
               </div>
             ) : (
-              <span className="text-2xl font-bold text-gray-900">
+              <span className="text-3xl font-bold text-gray-900">
                 {displayPrice ? formatPrice(displayPrice) : (product.prixVenteMin ? formatPrice(product.prixVenteMin) : 'Prix sur demande')}
               </span>
             )}
@@ -256,7 +282,7 @@ export default function ProduitDetailPage() {
                 {added ? 'Ajouté !' : 'Ajouter'}
               </button>
               <a
-                href="https://wa.me/2250709029625"
+                href={`https://wa.me/${whatsappNumber}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="py-2.5 px-4 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 bg-green-500 text-white hover:bg-green-600"
@@ -277,41 +303,41 @@ export default function ProduitDetailPage() {
             </div>
           )}
 
-          {/* Specs */}
+          {/* Specs - 2 columns layout */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h2 className="text-sm font-semibold mb-3">Caractéristiques</h2>
-            <dl className="grid grid-cols-2 gap-2 text-xs">
-              {product.marque && (
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              {/* Column 1: Marque, Modèle, SKU */}
+              <div className="space-y-2">
                 <div>
                   <dt className="text-gray-500">Marque</dt>
-                  <dd className="font-medium text-gray-900">{product.marque.nom}</dd>
+                  <dd className="font-medium text-gray-900">{product.marque?.nom || '-'}</dd>
                 </div>
-              )}
-              {product.categorie && (
                 <div>
-                  <dt className="text-gray-500">Catégorie</dt>
-                  <dd className="font-medium text-gray-900">{product.categorie.nom}</dd>
+                  <dt className="text-gray-500">Modèle</dt>
+                  <dd className="font-medium text-gray-900">{product.modele?.nom || '-'}</dd>
                 </div>
-              )}
-              {product.couleur && (
-                <div>
-                  <dt className="text-gray-500">Couleur</dt>
-                  <dd className="font-medium text-gray-900">{product.couleur}</dd>
-                </div>
-              )}
-              {product.poids && (
-                <div>
-                  <dt className="text-gray-500">Poids</dt>
-                  <dd className="font-medium text-gray-900">{product.poids} kg</dd>
-                </div>
-              )}
-              {product.sku && (
                 <div>
                   <dt className="text-gray-500">SKU</dt>
-                  <dd className="font-medium text-gray-900">{product.sku}</dd>
+                  <dd className="font-medium text-gray-900">{product.sku || '-'}</dd>
                 </div>
-              )}
-            </dl>
+              </div>
+              {/* Column 2: Catégorie, Couleur, Poids */}
+              <div className="space-y-2">
+                <div>
+                  <dt className="text-gray-500">Catégorie</dt>
+                  <dd className="font-medium text-gray-900">{product.categorie?.nom || '-'}</dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500">Couleur</dt>
+                  <dd className="font-medium text-gray-900">{product.couleur || '-'}</dd>
+                </div>
+                <div>
+                  <dt className="text-gray-500">Poids</dt>
+                  <dd className="font-medium text-gray-900">{product.poids ? `${product.poids} kg` : '-'}</dd>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

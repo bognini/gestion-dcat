@@ -16,7 +16,8 @@ import {
   Mail,
   Bell,
   Lock,
-  Palette
+  Palette,
+  MessageCircle
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -35,7 +36,6 @@ const parametresSections = [
       { title: 'Modèles', href: '/parametres/references/modeles', icon: Tags },
       { title: 'Fournisseurs', href: '/parametres/references/fournisseurs', icon: Truck },
       { title: 'Partenaires', href: '/parametres/references/partenaires', icon: Building2 },
-      { title: 'Emplacements', href: '/parametres/references/emplacements', icon: Database },
     ],
   },
   {
@@ -61,10 +61,10 @@ const parametresSections = [
     icon: Cog,
     colorClass: 'bg-slate-500',
     items: [
+      { title: 'Boutique (WhatsApp)', href: '/parametres/options', icon: MessageCircle },
       { title: 'Configuration SMTP', href: '/parametres/options', icon: Mail },
       { title: 'Notifications par e-mail', href: '/parametres/options', icon: Bell },
       { title: 'Sécurité & accès', href: '/parametres/options', icon: Lock },
-      { title: 'Affichage & préférences', href: '/parametres/options', icon: Palette },
     ],
   },
 ];

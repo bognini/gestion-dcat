@@ -502,11 +502,12 @@ model EvenementParticipant {
 // ==========================================
 
 model Categorie {
-  id          String    @id @default(uuid())
-  nom         String    @unique
-  description String?
-  familles    Famille[]
-  produits    Produit[]
+  id           String        @id @default(uuid())
+  nom          String        @unique
+  description  String?
+  familles     Famille[]
+  produits     Produit[]
+  emplacements Emplacement[]
 }
 
 model Famille {
@@ -545,14 +546,15 @@ model Modele {
 }
 
 model Emplacement {
-  id          String    @id @default(uuid())
-  nom         String    @unique
+  id          String     @id @default(uuid())
+  nom         String     @unique
   description String?
-  bureau      String?   // CEO OFFICE, BUREAU TECHNICIENS, ATELIER
-  armoire     String?   // Armoire, GRILLE
-  aile        String?   // Droite, Gauche (for Armoire only)
-  etagere     String?   // 1, 2, 3, 4, 5 or Mobile, 1-10 for ATELIER
+  bureau      String?    // PLACARD - SERVICE TECHNIQUE, MAGASIN, PLACARD - GERANT
+  categorieId String?
+  categorie   Categorie? @relation(fields: [categorieId], references: [id])
   produits    Produit[]
+
+  @@index([categorieId])
 }
 
 model Fournisseur {
@@ -1284,4 +1286,18 @@ model MouvementCaisse {
   justificatif String? // path to uploaded file
   date        DateTime @default(now())
   createdAt   DateTime @default(now())
+}
+
+// ==========================================
+// APP SETTINGS & CONFIGURATION
+// ==========================================
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  label     String?
+  category  String   @default("general") // general, boutique, contact, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -78,7 +78,7 @@ export default function OptionsPage() {
     whatsappNumber: '+225 07 09 02 96 25',
   });
 
-  // Load settings from localStorage on mount
+  // Load settings from localStorage and database on mount
   useEffect(() => {
     const savedEmail = localStorage.getItem('dcat_email_settings');
     const savedNotifications = localStorage.getItem('dcat_notification_settings');
@@ -87,6 +87,22 @@ export default function OptionsPage() {
     if (savedEmail) setEmailSettings(JSON.parse(savedEmail));
     if (savedNotifications) setNotifications(JSON.parse(savedNotifications));
     if (savedGeneral) setGeneralSettings(JSON.parse(savedGeneral));
+
+    // Load WhatsApp number from database
+    const fetchWhatsApp = async () => {
+      try {
+        const res = await fetch('/api/settings?key=whatsapp_number');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.value) {
+            setGeneralSettings(prev => ({ ...prev, whatsappNumber: data.value }));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching WhatsApp number:', error);
+      }
+    };
+    fetchWhatsApp();
   }, []);
 
   const parseEmailText = (raw: string): string[] => {
@@ -280,11 +296,35 @@ export default function OptionsPage() {
   const handleSaveGeneral = async () => {
     setSaving(true);
     localStorage.setItem('dcat_general_settings', JSON.stringify(generalSettings));
-    await new Promise(resolve => setTimeout(resolve, 500));
-    toast({
-      title: 'Paramètres généraux enregistrés',
-      description: 'La configuration a été mise à jour',
-    });
+    
+    try {
+      // Save WhatsApp number to database
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key: 'whatsapp_number',
+          value: generalSettings.whatsappNumber,
+          label: 'Numéro WhatsApp (E-Market)',
+          category: 'boutique',
+        }),
+      });
+
+      if (res.ok) {
+        toast({
+          title: 'Paramètres généraux enregistrés',
+          description: 'La configuration a été mise à jour',
+        });
+      } else {
+        throw new Error('Failed to save');
+      }
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: 'Impossible d\'enregistrer les paramètres',
+      });
+    }
     setSaving(false);
   };
 
