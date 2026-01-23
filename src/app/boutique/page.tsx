@@ -237,8 +237,8 @@ function ProductCard({ product }: { product: Produit }) {
           <p className="text-xs text-gray-500 mb-1 truncate">{product.categorie.nom}</p>
         )}
 
-        {/* Product name - fixed height with line clamp */}
-        <h3 className="font-medium text-gray-900 text-sm sm:text-base line-clamp-2 group-hover:text-blue-600 transition-colors flex-grow">
+        {/* Product name - fixed height with line clamp, blue color */}
+        <h3 className="text-blue-600 text-sm sm:text-base line-clamp-2 group-hover:text-blue-700 transition-colors flex-grow">
           {product.marque ? `${product.marque.nom} ` : ''}{product.nom}
         </h3>
 

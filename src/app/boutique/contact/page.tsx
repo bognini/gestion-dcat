@@ -103,8 +103,11 @@ export default function ContactPage() {
               <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
                 <Phone className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-slate-900 mb-2">Téléphone</h3>
-              <a href="tel:+2250709029625" className="text-blue-600 hover:underline">
+              <h3 className="font-semibold text-slate-900 mb-2">Téléphones</h3>
+              <a href="tel:+2252721373363" className="text-blue-600 hover:underline block">
+                +225 27 21 37 33 63
+              </a>
+              <a href="tel:+2250709029625" className="text-blue-600 hover:underline block">
                 +225 07 09 02 96 25
               </a>
             </div>

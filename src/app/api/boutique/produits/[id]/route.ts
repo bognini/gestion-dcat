@@ -32,6 +32,9 @@ export async function GET(
         marque: {
           select: { id: true, nom: true },
         },
+        modele: {
+          select: { id: true, nom: true },
+        },
         images: {
           orderBy: { sortOrder: 'asc' },
           select: { id: true },

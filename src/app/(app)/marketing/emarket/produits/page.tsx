@@ -90,6 +90,8 @@ export default function EmarketProduitsPage() {
   const [promoType, setPromoType] = useState<'forever' | 'period'>('forever');
   const [promoStart, setPromoStart] = useState('');
   const [promoEnd, setPromoEnd] = useState('');
+  const [usePercentage, setUsePercentage] = useState(false);
+  const [promoPercentage, setPromoPercentage] = useState('');
 
   // Bulk selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -174,9 +176,9 @@ export default function EmarketProduitsPage() {
   const openPromoDialog = (produit: Produit) => {
     setSelectedProduit(produit);
     setPromoPrice(produit.promoPrice?.toString() || '');
+    setUsePercentage(false);
+    setPromoPercentage('');
     // Determine promo type based on dates
-    // Note: We need to cast produit to access these fields if they aren't in the interface yet
-    // but they were added to the API update. We should update the interface too.
     const p = produit as any;
     if (p.promoStart || p.promoEnd) {
       setPromoType('period');
@@ -188,6 +190,19 @@ export default function EmarketProduitsPage() {
       setPromoEnd('');
     }
     setPromoDialog(true);
+  };
+
+  // Calculate promo price from percentage
+  const handlePercentageChange = (percentage: string) => {
+    setPromoPercentage(percentage);
+    if (percentage && selectedProduit) {
+      const basePrice = selectedProduit.prixVenteMin || selectedProduit.prixVente || 0;
+      const discount = parseFloat(percentage);
+      if (!isNaN(discount) && discount > 0 && discount <= 100) {
+        const newPrice = Math.round(basePrice * (1 - discount / 100));
+        setPromoPrice(newPrice.toString());
+      }
+    }
   };
 
   const savePromoPrice = async () => {
@@ -614,16 +629,59 @@ export default function EmarketProduitsPage() {
               <Label>Prix normal</Label>
               <p className="text-lg font-mono">{formatCurrency(selectedProduit?.prixVenteMin || selectedProduit?.prixVente || 0)}</p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="promoPrice">Prix promotionnel (FCFA)</Label>
-              <Input
-                id="promoPrice"
-                type="number"
-                value={promoPrice}
-                onChange={(e) => setPromoPrice(e.target.value)}
-                placeholder="Laisser vide pour retirer la promo"
-                className="money-input"
-              />
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="usePercentage"
+                  checked={usePercentage}
+                  onCheckedChange={(checked) => {
+                    setUsePercentage(checked as boolean);
+                    if (!checked) {
+                      setPromoPercentage('');
+                    }
+                  }}
+                />
+                <Label htmlFor="usePercentage" className="font-normal cursor-pointer">
+                  Utiliser un pourcentage de réduction
+                </Label>
+              </div>
+
+              {usePercentage ? (
+                <div className="space-y-2">
+                  <Label htmlFor="promoPercentage">Pourcentage de réduction (%)</Label>
+                  <div className="relative">
+                    <Input
+                      id="promoPercentage"
+                      type="number"
+                      min="1"
+                      max="99"
+                      value={promoPercentage}
+                      onChange={(e) => handlePercentageChange(e.target.value)}
+                      placeholder="Ex: 20 pour -20%"
+                      className="pr-8"
+                    />
+                    <Percent className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
+                  {promoPrice && (
+                    <p className="text-sm text-green-600 font-medium">
+                      Prix promo calculé : {formatCurrency(parseFloat(promoPrice))}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="promoPrice">Prix promotionnel (FCFA)</Label>
+                  <Input
+                    id="promoPrice"
+                    type="number"
+                    value={promoPrice}
+                    onChange={(e) => setPromoPrice(e.target.value)}
+                    placeholder="Laisser vide pour retirer la promo"
+                    className="money-input"
+                  />
+                </div>
+              )}
+
               {promoPrice && (selectedProduit?.prixVenteMin || selectedProduit?.prixVente) && parseFloat(promoPrice) < (selectedProduit?.prixVenteMin || selectedProduit?.prixVente || 0) && (
                 <p className="text-sm text-green-600">
                   Réduction de {Math.round((1 - parseFloat(promoPrice) / (selectedProduit?.prixVenteMin || selectedProduit?.prixVente || 1)) * 100)}%

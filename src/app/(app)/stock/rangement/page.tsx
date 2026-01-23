@@ -47,35 +47,31 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+interface Categorie {
+  id: string;
+  nom: string;
+}
+
 interface Emplacement {
   id: string;
   nom: string;
   description: string | null;
   bureau: string | null;
-  armoire: string | null;
-  aile: string | null;
-  etagere: string | null;
+  categorieId: string | null;
+  categorie: Categorie | null;
   _count?: { produits: number };
 }
 
-const DEFAULT_BUREAUX = ['BUREAU DG', 'BUREAU IT', 'ATELIER'];
-
-const ARMOIRES = [
-  { value: 'Armoire', label: 'Armoire' },
-  { value: 'Grille', label: 'Grille' },
+const BUREAUX = [
+  'PLACARD - SERVICE TECHNIQUE',
+  'MAGASIN',
+  'PLACARD - GERANT',
 ];
-
-const AILES = [
-  { value: 'Droite', label: 'Droite' },
-  { value: 'Gauche', label: 'Gauche' },
-];
-
-const ETAGERES_STANDARD = ['1', '2', '3', '4', '5'];
-const ETAGERES_ATELIER = ['Mobile', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 
 export default function RangementPage() {
   const { toast } = useToast();
   const [emplacements, setEmplacements] = useState<Emplacement[]>([]);
+  const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -86,39 +82,35 @@ export default function RangementPage() {
     nom: '',
     description: '',
     bureau: '',
-    customBureau: '',
-    armoire: '',
-    aile: '',
-    etagere: '',
+    categorieId: '',
   });
-  const [showCustomBureau, setShowCustomBureau] = useState(false);
-
-  // Get unique bureaux from existing emplacements
-  const existingBureaux = [...new Set(emplacements.map(e => e.bureau).filter(Boolean))] as string[];
-  const allBureaux = [...new Set([...DEFAULT_BUREAUX, ...existingBureaux])];
 
   useEffect(() => {
-    fetchEmplacements();
+    fetchData();
   }, []);
 
-  const fetchEmplacements = async () => {
+  const fetchData = async () => {
     try {
-      const res = await fetch('/api/emplacements');
-      if (res.ok) {
-        const data = await res.json();
-        setEmplacements(data);
-      }
+      const [empRes, catRes] = await Promise.all([
+        fetch('/api/emplacements'),
+        fetch('/api/categories'),
+      ]);
+      if (empRes.ok) setEmplacements(await empRes.json());
+      if (catRes.ok) setCategories(await catRes.json());
     } catch (error) {
-      console.error('Error fetching emplacements:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSubmit = async () => {
-    const effectiveName = formData.nom.trim() || generateName();
-    if (!effectiveName.trim()) {
+    if (!formData.nom.trim()) {
       toast({ variant: 'destructive', title: 'Erreur', description: 'Le nom est requis' });
+      return;
+    }
+    if (!formData.bureau) {
+      toast({ variant: 'destructive', title: 'Erreur', description: 'Le bureau est requis' });
       return;
     }
 
@@ -133,12 +125,10 @@ export default function RangementPage() {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nom: effectiveName.trim(),
+          nom: formData.nom.trim(),
           description: formData.description.trim() || null,
-          bureau: showCustomBureau ? formData.customBureau.trim() : formData.bureau || null,
-          armoire: formData.armoire || null,
-          aile: formData.aile || null,
-          etagere: formData.etagere || null,
+          bureau: formData.bureau,
+          categorieId: formData.categorieId || null,
         }),
       });
 
@@ -149,12 +139,12 @@ export default function RangementPage() {
 
       toast({
         title: editingEmplacement ? 'Emplacement modifié' : 'Emplacement créé',
-        description: `"${effectiveName}" a été ${editingEmplacement ? 'modifié' : 'créé'}`,
+        description: `"${formData.nom}" a été ${editingEmplacement ? 'modifié' : 'créé'}`,
       });
 
       setDialogOpen(false);
       resetForm();
-      fetchEmplacements();
+      fetchData();
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -186,7 +176,7 @@ export default function RangementPage() {
 
       setDeleteDialogOpen(false);
       setEditingEmplacement(null);
-      fetchEmplacements();
+      fetchData();
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -208,10 +198,7 @@ export default function RangementPage() {
       nom: emplacement.nom,
       description: emplacement.description || '',
       bureau: emplacement.bureau || '',
-      customBureau: '',
-      armoire: emplacement.armoire || '',
-      aile: emplacement.aile || '',
-      etagere: emplacement.etagere || '',
+      categorieId: emplacement.categorieId || '',
     });
     setDialogOpen(true);
   };
@@ -221,27 +208,9 @@ export default function RangementPage() {
       nom: '',
       description: '',
       bureau: '',
-      customBureau: '',
-      armoire: '',
-      aile: '',
-      etagere: '',
+      categorieId: '',
     });
-    setShowCustomBureau(false);
   };
-
-  // Auto-generate name based on selections
-  const generateName = () => {
-    const parts = [];
-    const bureauName = showCustomBureau ? formData.customBureau : formData.bureau;
-    if (bureauName) parts.push(bureauName);
-    if (formData.armoire) parts.push(formData.armoire);
-    if (formData.aile) parts.push(`Aile ${formData.aile}`);
-    if (formData.etagere) parts.push(`Ét.${formData.etagere}`);
-    return parts.join(' - ');
-  };
-
-  // Get the effective bureau value
-  const getEffectiveBureau = () => showCustomBureau ? formData.customBureau : formData.bureau;
 
   const filteredEmplacements = emplacements.filter(e =>
     e.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -329,14 +298,8 @@ export default function RangementPage() {
                 {emplacement.bureau && (
                   <Badge variant="outline">{emplacement.bureau}</Badge>
                 )}
-                {emplacement.armoire && (
-                  <Badge variant="outline">{emplacement.armoire}</Badge>
-                )}
-                {emplacement.aile && (
-                  <Badge variant="outline">Aile {emplacement.aile}</Badge>
-                )}
-                {emplacement.etagere && (
-                  <Badge variant="outline">Ét. {emplacement.etagere}</Badge>
+                {emplacement.categorie && (
+                  <Badge variant="secondary">{emplacement.categorie.nom}</Badge>
                 )}
               </div>
               <div className="flex items-center gap-2 text-sm">
@@ -373,119 +336,48 @@ export default function RangementPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Bureau *</Label>
-                <Button 
-                  type="button" 
-                  variant="link" 
-                  size="sm" 
-                  className="h-auto p-0 text-xs"
-                  onClick={() => {
-                    setShowCustomBureau(!showCustomBureau);
-                    if (!showCustomBureau) {
-                      setFormData({ ...formData, bureau: '', armoire: '', aile: '', etagere: '' });
-                    } else {
-                      setFormData({ ...formData, customBureau: '', armoire: '', aile: '', etagere: '' });
-                    }
-                  }}
-                >
-                  {showCustomBureau ? 'Choisir existant' : '+ Nouveau bureau'}
-                </Button>
-              </div>
-              {showCustomBureau ? (
-                <Input
-                  value={formData.customBureau}
-                  onChange={(e) => setFormData({ ...formData, customBureau: e.target.value.toUpperCase(), armoire: '', aile: '', etagere: '' })}
-                  placeholder="Ex: BUREAU COMMERCIAL"
-                />
-              ) : (
-                <Select 
-                  value={formData.bureau} 
-                  onValueChange={(v) => {
-                    const isAtelier = v === 'ATELIER' || v.toUpperCase().includes('ATELIER');
-                    const newArmoire = isAtelier ? 'Grille' : 'Armoire';
-                    setFormData({ ...formData, bureau: v, armoire: newArmoire, aile: '', etagere: '' });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allBureaux.map((b) => (
-                      <SelectItem key={b} value={b}>{b}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+              <Label htmlFor="nom">Nom de l&apos;emplacement *</Label>
+              <Input
+                id="nom"
+                value={formData.nom}
+                onChange={(e) => setFormData({ ...formData, nom: e.target.value.toUpperCase() })}
+                placeholder="Ex: M1, P5, A3..."
+              />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{getEffectiveBureau()?.toUpperCase().includes('ATELIER') ? 'Structure' : 'Armoire'}</Label>
-                <Select 
-                  value={formData.armoire} 
-                  onValueChange={(v) => setFormData({ ...formData, armoire: v, aile: '', etagere: '' })}
-                  disabled={!getEffectiveBureau()}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getEffectiveBureau()?.toUpperCase().includes('ATELIER') ? (
-                      <SelectItem value="Grille">Grille</SelectItem>
-                    ) : (
-                      <SelectItem value="Armoire">Armoire</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              {!getEffectiveBureau()?.toUpperCase().includes('ATELIER') && (
-                <div className="space-y-2">
-                  <Label>Aile</Label>
-                  <Select 
-                    value={formData.aile} 
-                    onValueChange={(v) => setFormData({ ...formData, aile: v })}
-                    disabled={!formData.armoire}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AILES.map((a) => (
-                        <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              </div>
             <div className="space-y-2">
-              <Label>Étagère *</Label>
+              <Label>Bureau *</Label>
               <Select 
-                value={formData.etagere} 
-                onValueChange={(v) => {
-                  setFormData({ ...formData, etagere: v });
-                }}
-                disabled={getEffectiveBureau()?.toUpperCase().includes('ATELIER') ? !formData.armoire : !formData.aile}
+                value={formData.bureau} 
+                onValueChange={(v) => setFormData({ ...formData, bureau: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner" />
+                  <SelectValue placeholder="Sélectionner un bureau" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(getEffectiveBureau()?.toUpperCase().includes('ATELIER') ? ETAGERES_ATELIER : ETAGERES_STANDARD).map((e) => (
-                    <SelectItem key={e} value={e}>{e === 'Mobile' ? 'Étagère Mobile' : `Étagère ${e}`}</SelectItem>
+                  {BUREAUX.map((b) => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="nom">Nom de l'emplacement</Label>
-              <Input
-                id="nom"
-                value={formData.nom || generateName()}
-                onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                placeholder="Généré automatiquement"
-              />
-              <p className="text-xs text-muted-foreground">Le nom est généré automatiquement mais peut être modifié</p>
+              <Label>Catégorie</Label>
+              <Select 
+                value={formData.categorieId} 
+                onValueChange={(v) => setFormData({ ...formData, categorieId: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une catégorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.nom}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Catégories depuis Paramètres → Références
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>

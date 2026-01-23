@@ -25,9 +25,10 @@ export async function PUT(
         nom: data.nom.trim(),
         description: data.description?.trim() || null,
         bureau: data.bureau || null,
-        armoire: data.armoire || null,
-        aile: data.aile || null,
-        etagere: data.etagere || null,
+        categorieId: data.categorieId || null,
+      },
+      include: {
+        categorie: true,
       },
     });
 
