@@ -129,6 +129,7 @@ export default function NouvelleInterventionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
+          typeMaintenance: typeIntervention,
           intervenantIds: selectedIntervenants,
         }),
       });
