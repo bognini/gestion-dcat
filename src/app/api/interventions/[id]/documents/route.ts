@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { validateDocumentUpload } from '@/lib/upload-security';
 
 export async function GET(
   request: NextRequest,
@@ -57,6 +58,11 @@ export async function POST(
 
     if (!file) {
       return NextResponse.json({ error: 'Fichier requis' }, { status: 400 });
+    }
+
+    const validation = validateDocumentUpload(file);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();

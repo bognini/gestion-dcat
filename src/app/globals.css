@@ -203,13 +203,13 @@
     @apply bg-gradient-to-br from-amber-400 to-amber-600;
   }
 
-  /* Prevent scroll wheel from changing money input values */
-  input[type="number"].money-input {
+  /* Remove spinner arrows and prevent scroll wheel from changing ALL number inputs */
+  input[type="number"] {
     -moz-appearance: textfield;
   }
   
-  input[type="number"].money-input::-webkit-outer-spin-button,
-  input[type="number"].money-input::-webkit-inner-spin-button {
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
   }

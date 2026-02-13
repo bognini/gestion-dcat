@@ -10,7 +10,16 @@ export async function GET(request: NextRequest) {
     const key = searchParams.get('key');
 
     // If requesting a specific key, return just that value (public access for boutique)
+    // Only allow whitelisted keys for unauthenticated access
+    const PUBLIC_KEYS = ['whatsapp_number', 'boutique_phone', 'boutique_email', 'boutique_address'];
     if (key) {
+      if (!PUBLIC_KEYS.includes(key)) {
+        // Non-public keys require authentication
+        const session = await getSessionFromCookie();
+        if (!session) {
+          return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+        }
+      }
       const setting = await prisma.setting.findUnique({
         where: { key },
       });

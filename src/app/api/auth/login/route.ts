@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateUser, createSession, setSessionCookie } from '@/lib/auth';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 5 attempts per 60 seconds per IP
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit(`login:${ip}`, { maxRequests: 5, windowSeconds: 60 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Trop de tentatives de connexion. Veuillez réessayer dans une minute.' },
+        { status: 429, headers: { 'Retry-After': Math.ceil((rateLimit.resetAt - Date.now()) / 1000).toString() } }
+      );
+    }
+
     const { usernameOrEmail, password } = await request.json();
 
     if (!usernameOrEmail || !password) {

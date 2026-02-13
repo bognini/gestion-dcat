@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 function generateReference() {
   const date = new Date();
@@ -11,6 +12,16 @@ function generateReference() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 10 orders per 5 minutes per IP
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit(`order:${ip}`, { maxRequests: 10, windowSeconds: 300 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Trop de commandes. Veuillez réessayer plus tard.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { client, adresseLivraison, modePaiement, notes, lignes } = body;
 
@@ -20,6 +31,14 @@ export async function POST(request: NextRequest) {
         { error: 'Informations manquantes' },
         { status: 400 }
       );
+    }
+
+    // Input length validation
+    if (client.nom.length > 200 || client.telephone.length > 30 || (client.email && client.email.length > 254)) {
+      return NextResponse.json({ error: 'Données invalides' }, { status: 400 });
+    }
+    if (lignes.length > 50) {
+      return NextResponse.json({ error: 'Trop de lignes dans la commande' }, { status: 400 });
     }
 
     // Find or create client

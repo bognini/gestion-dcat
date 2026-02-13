@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, validatePassword } from '@/lib/auth';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 3 attempts per 10 minutes per IP
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit(`setup:${ip}`, { maxRequests: 3, windowSeconds: 600 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Trop de tentatives. Veuillez réessayer plus tard.' },
+        { status: 429 }
+      );
+    }
+
     // Check if admin already exists
     const existingAdmin = await prisma.utilisateur.findFirst({
       where: { role: 'admin' },
