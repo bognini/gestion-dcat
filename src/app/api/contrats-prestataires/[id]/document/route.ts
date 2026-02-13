@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { validateDocumentUpload, sanitizeFilename } from '@/lib/upload-security';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import path from 'path';
 
@@ -42,8 +43,13 @@ export async function POST(
       }
     }
 
+    const validation = validateDocumentUpload(file);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
     // Generate unique filename
-    const ext = path.extname(file.name);
+    const ext = path.extname(sanitizeFilename(file.name));
     const filename = `${id}-${Date.now()}${ext}`;
     const filePath = path.join(uploadDir, filename);
 

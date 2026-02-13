@@ -16,7 +16,11 @@ import {
   Briefcase,
   Building2,
   Pencil,
-  ArrowRight
+  ArrowRight,
+  Lock,
+  Eye,
+  EyeOff,
+  Save
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -168,6 +172,17 @@ export default function MonProfilPage() {
 
   // Delete confirmation
   const [deleteDialog, setDeleteDialog] = useState<{ type: 'absence' | 'transport'; id: string } | null>(null);
+
+  // Password change
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [showCurrentPwd, setShowCurrentPwd] = useState(false);
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -362,6 +377,46 @@ export default function MonProfilPage() {
 
   const totalTransport = transportLignes.reduce((sum, l) => sum + (parseFloat(l.cout) || 0), 0);
 
+  const handleChangePassword = async () => {
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      toast({ variant: 'destructive', title: 'Tous les champs sont requis' });
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({ variant: 'destructive', title: 'Les mots de passe ne correspondent pas' });
+      return;
+    }
+    if (passwordForm.newPassword.length < 8) {
+      toast({ variant: 'destructive', title: 'Le mot de passe doit contenir au moins 8 caractères' });
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const res = await fetch('/api/mon-profil/change-password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(passwordForm),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast({ title: 'Mot de passe modifié avec succès' });
+        setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setShowCurrentPwd(false);
+        setShowNewPwd(false);
+        setShowConfirmPwd(false);
+      } else {
+        toast({ variant: 'destructive', title: 'Erreur', description: data.error || 'Impossible de modifier le mot de passe' });
+      }
+    } catch {
+      toast({ variant: 'destructive', title: 'Erreur', description: 'Une erreur est survenue' });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -443,26 +498,35 @@ export default function MonProfilPage() {
         </CardContent>
       </Card>
 
-      {!employe ? (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Votre compte n&apos;est pas encore lié à un profil employé.</p>
-            <p className="text-sm">Contactez l&apos;administrateur pour lier votre compte.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Tabs defaultValue="absences" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="absences" className="gap-2">
-              <CalendarCheck className="h-4 w-4" />
-              Mes Absences
-            </TabsTrigger>
-            <TabsTrigger value="transport" className="gap-2">
-              <Car className="h-4 w-4" />
-              Fiches Transport
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue={employe ? "absences" : "securite"} className="space-y-4">
+        <TabsList>
+          {employe && (
+            <>
+              <TabsTrigger value="absences" className="gap-2">
+                <CalendarCheck className="h-4 w-4" />
+                Mes Absences
+              </TabsTrigger>
+              <TabsTrigger value="transport" className="gap-2">
+                <Car className="h-4 w-4" />
+                Fiches Transport
+              </TabsTrigger>
+            </>
+          )}
+          <TabsTrigger value="securite" className="gap-2">
+            <Lock className="h-4 w-4" />
+            Sécurité
+          </TabsTrigger>
+        </TabsList>
+
+        {!employe && (
+          <Card className="mb-4">
+            <CardContent className="py-6 text-center text-muted-foreground">
+              <User className="h-10 w-10 mx-auto mb-3 opacity-50" />
+              <p>Votre compte n&apos;est pas encore lié à un profil employé.</p>
+              <p className="text-sm">Contactez l&apos;administrateur pour lier votre compte.</p>
+            </CardContent>
+          </Card>
+        )}
 
           {/* Absences Tab */}
           <TabsContent value="absences">
@@ -539,7 +603,7 @@ export default function MonProfilPage() {
                 </Dialog>
               </CardHeader>
               <CardContent>
-                {employe.absences.length === 0 ? (
+                {employe?.absences.length === 0 ? (
                   <p className="text-center py-8 text-muted-foreground">
                     Aucune demande d&apos;absence
                   </p>
@@ -555,7 +619,7 @@ export default function MonProfilPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {employe.absences.map((absence) => {
+                      {employe?.absences.map((absence) => {
                         const typeConfig = TYPES_ABSENCE[absence.type] || { label: absence.type, color: 'bg-gray-500' };
                         const statutConfig = STATUTS_ABSENCE[absence.statut] || STATUTS_ABSENCE.en_attente;
                         const StatutIcon = statutConfig.icon;
@@ -743,7 +807,7 @@ export default function MonProfilPage() {
                 </Dialog>
               </CardHeader>
               <CardContent>
-                {employe.fichesTransport.length === 0 ? (
+                {employe?.fichesTransport.length === 0 ? (
                   <p className="text-center py-8 text-muted-foreground">
                     Aucune fiche de transport
                   </p>
@@ -759,7 +823,7 @@ export default function MonProfilPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {employe.fichesTransport.map((fiche) => (
+                      {employe?.fichesTransport.map((fiche) => (
                         <TableRow key={fiche.id}>
                           <TableCell>{formatDate(fiche.date)}</TableCell>
                           <TableCell>
@@ -814,8 +878,100 @@ export default function MonProfilPage() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
-      )}
+        {/* Security Tab */}
+        <TabsContent value="securite">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Modifier mon mot de passe
+              </CardTitle>
+              <CardDescription>
+                Choisissez un mot de passe fort avec au moins 8 caractères, incluant majuscules, minuscules, chiffres et caractères spéciaux.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 max-w-md">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Mot de passe actuel *</Label>
+                <div className="relative">
+                  <Input
+                    id="currentPassword"
+                    type={showCurrentPwd ? 'text' : 'password'}
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                    placeholder="Votre mot de passe actuel"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowCurrentPwd(!showCurrentPwd)}
+                  >
+                    {showCurrentPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">Nouveau mot de passe *</Label>
+                <div className="relative">
+                  <Input
+                    id="newPassword"
+                    type={showNewPwd ? 'text' : 'password'}
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    placeholder="Nouveau mot de passe"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowNewPwd(!showNewPwd)}
+                  >
+                    {showNewPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmer le nouveau mot de passe *</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPwd ? 'text' : 'password'}
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    placeholder="Confirmez le nouveau mot de passe"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowConfirmPwd(!showConfirmPwd)}
+                  >
+                    {showConfirmPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {passwordForm.newPassword && passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
+                  <p className="text-xs text-destructive">Les mots de passe ne correspondent pas</p>
+                )}
+              </div>
+
+              <Button
+                onClick={handleChangePassword}
+                disabled={changingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+              >
+                {changingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Save className="mr-2 h-4 w-4" />
+                Modifier le mot de passe
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteDialog} onOpenChange={(open) => !open && setDeleteDialog(null)}>

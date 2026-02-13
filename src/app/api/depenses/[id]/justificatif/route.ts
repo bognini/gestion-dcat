@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { validateDocumentUpload, sanitizeFilename } from '@/lib/upload-security';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
@@ -32,12 +33,17 @@ export async function POST(
       return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 });
     }
 
+    const validation = validateDocumentUpload(file);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
     // Create uploads directory if it doesn't exist
     const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'justificatifs');
     await mkdir(uploadsDir, { recursive: true });
 
     // Generate unique filename
-    const ext = path.extname(file.name);
+    const ext = path.extname(sanitizeFilename(file.name));
     const filename = `depense-${id}-${Date.now()}${ext}`;
     const filepath = path.join(uploadsDir, filename);
 

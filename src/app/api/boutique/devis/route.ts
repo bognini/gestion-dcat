@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 function generateReference() {
   const date = new Date();
@@ -12,6 +13,16 @@ function generateReference() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 5 quote requests per 10 minutes per IP
+    const ip = getClientIp(request);
+    const rateLimit = checkRateLimit(`devis:${ip}`, { maxRequests: 5, windowSeconds: 600 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Trop de demandes. Veuillez réessayer plus tard.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { nom, entreprise, email, telephone, adresse, message, lignes } = body;
 
@@ -21,6 +32,14 @@ export async function POST(request: NextRequest) {
         { error: 'Informations manquantes' },
         { status: 400 }
       );
+    }
+
+    // Input length validation
+    if (nom.length > 200 || (entreprise && entreprise.length > 200) || (email && email.length > 254) || (telephone && telephone.length > 30) || (adresse && adresse.length > 500) || (message && message.length > 2000)) {
+      return NextResponse.json({ error: 'Données invalides' }, { status: 400 });
+    }
+    if (lignes && lignes.length > 20) {
+      return NextResponse.json({ error: 'Trop de lignes dans la demande' }, { status: 400 });
     }
 
     // Find a user to assign the devis to (System user or Admin)

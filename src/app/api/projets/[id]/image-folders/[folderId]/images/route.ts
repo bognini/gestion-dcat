@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { validateImageUpload } from '@/lib/upload-security';
 
 export async function POST(
   request: NextRequest,
@@ -20,6 +21,11 @@ export async function POST(
     // Process all files in the form data
     for (const [key, value] of formData.entries()) {
       if (value instanceof File && value.type.startsWith('image/')) {
+        const validation = validateImageUpload(value);
+        if (!validation.valid) {
+          return NextResponse.json({ error: validation.error }, { status: 400 });
+        }
+
         const bytes = await value.arrayBuffer();
         const buffer = Buffer.from(bytes);
 

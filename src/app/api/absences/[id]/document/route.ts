@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getSessionFromCookie } from '@/lib/auth';
+import { validateDocumentUpload, sanitizeFilename } from '@/lib/upload-security';
 import { writeFile, unlink, mkdir } from 'fs/promises';
 import path from 'path';
 
@@ -10,6 +12,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getSessionFromCookie();
+    if (!user) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+
     const { id } = await params;
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -18,9 +25,14 @@ export async function POST(
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
+    const validation = validateDocumentUpload(file);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
     await mkdir(UPLOAD_DIR, { recursive: true });
 
-    const ext = path.extname(file.name);
+    const ext = path.extname(sanitizeFilename(file.name));
     const filename = `absence-${id}-${Date.now()}${ext}`;
     const filepath = path.join(UPLOAD_DIR, filename);
 
@@ -47,6 +59,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await getSessionFromCookie();
+    if (!user) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+
     const { id } = await params;
 
     const absence = await prisma.demandeAbsence.findUnique({

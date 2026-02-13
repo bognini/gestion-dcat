@@ -85,19 +85,19 @@ docker run -d --name gestion_dcat_app \
 ### Production (.env on VM)
 ```env
 # Database
-DATABASE_URL="postgresql://admindcatdb:REDACTED_PASSWORD@db:5432/gestion_dcat?schema=public"
-POSTGRES_USER=admindcatdb
-POSTGRES_PASSWORD=REDACTED_PASSWORD
-POSTGRES_DB=gestion_dcat
+DATABASE_URL="postgresql://<DB_USER>:<DB_PASSWORD>@db:5432/<DB_NAME>?schema=public"
+POSTGRES_USER=<DB_USER>
+POSTGRES_PASSWORD=<DB_PASSWORD>
+POSTGRES_DB=<DB_NAME>
 
 # Authentication
-AUTH_SECRET=REDACTED_SECRET
+AUTH_SECRET=<GENERATE_A_STRONG_RANDOM_SECRET_64_CHARS_MIN>
 
 # SMTP Configuration
 SMTP_HOST=smtp.dcat.ci
 SMTP_PORT=587
 SMTP_USER=noreply@dcat.ci
-SMTP_PASS=your_smtp_password_here
+SMTP_PASS=<SMTP_PASSWORD>
 SMTP_FROM=noreply@dcat.ci
 
 # Application
@@ -107,6 +107,10 @@ NODE_ENV=production
 # ACME Email for Let's Encrypt
 ACME_EMAIL=admin@dcat.ci
 ```
+
+> ⚠️ **IMPORTANT**: Never commit real credentials to this file or any tracked file.
+> Store production secrets only in the `.env` file on the VM (which is `.gitignore`d).
+> If credentials were previously committed, rotate them immediately on the production server.
 
 ---
 
