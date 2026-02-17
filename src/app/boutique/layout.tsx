@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, createContext, useContext } from 'react';
-import { ShoppingCart, Menu, X, Search, Phone, Mail } from 'lucide-react';
+import { ShoppingCart, Menu, X, Search, Phone, Mail, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import {
   SheetTrigger,
   SheetClose,
 } from '@/components/ui/sheet';
+import { BoutiqueAuthProvider, useBoutiqueAuth } from '@/components/providers/boutique-auth-provider';
 
 // Cart Context
 interface CartItem {
@@ -172,6 +173,9 @@ function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {/* Account */}
+            <AccountButton />
+
             {/* Cart */}
             <Sheet>
               <SheetTrigger asChild>
@@ -315,6 +319,11 @@ function Header() {
                 Contact
               </Link>
             </li>
+            <li className="ml-auto">
+              <Link href="/boutique/mon-compte" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
+                Mon compte
+              </Link>
+            </li>
           </ul>
         </div>
       </nav>
@@ -341,6 +350,11 @@ function Header() {
             <li>
               <Link href="/boutique/contact" className="block px-4 py-3 text-gray-700 hover:bg-gray-50" onClick={() => setMobileMenuOpen(false)}>
                 Contact
+              </Link>
+            </li>
+            <li className="border-t">
+              <Link href="/boutique/mon-compte" className="block px-4 py-3 text-gray-700 hover:bg-gray-50" onClick={() => setMobileMenuOpen(false)}>
+                Mon compte
               </Link>
             </li>
           </ul>
@@ -463,8 +477,47 @@ function Footer() {
   );
 }
 
+function AccountButton() {
+  const { client, loading, logout } = useBoutiqueAuth();
+
+  if (loading) return null;
+
+  if (client) {
+    return (
+      <div className="flex items-center gap-1">
+        <Link href="/boutique/mon-compte">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-slate-700 hover:text-blue-600">
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline">{client.prenom || client.nom}</span>
+          </Button>
+        </Link>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-red-600" onClick={() => logout()}>
+          <LogOut className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <Link href="/boutique/connexion">
+        <Button variant="ghost" size="sm" className="gap-1.5 text-slate-700 hover:text-blue-600">
+          <User className="h-4 w-4" />
+          <span className="hidden sm:inline">Connexion</span>
+        </Button>
+      </Link>
+      <Link href="/boutique/inscription" className="hidden sm:block">
+        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+          S&apos;inscrire
+        </Button>
+      </Link>
+    </div>
+  );
+}
+
 export default function BoutiqueLayout({ children }: { children: React.ReactNode }) {
   return (
+    <BoutiqueAuthProvider>
     <CartProvider>
       <div className="min-h-screen flex flex-col bg-gray-50" suppressHydrationWarning>
         <Header />
@@ -474,5 +527,6 @@ export default function BoutiqueLayout({ children }: { children: React.ReactNode
         <Footer />
       </div>
     </CartProvider>
+    </BoutiqueAuthProvider>
   );
 }
