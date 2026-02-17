@@ -1178,47 +1178,51 @@ model Paiement {
 // ==========================================
 
 model Client {
-  id           String       @id @default(uuid())
-  type         String       @default("particulier") // particulier, partenaire
-  nom          String
-  prenom       String?
-  email        String?
-  telephone    String       // Required
-  adresse      String?
-  ville        String?
-  pays         String       @default("Côte d'Ivoire")
-  isActive     Boolean      @default(true)
-  partenaireId String?
-  partenaire   Partenaire?  @relation("ClientPartenaire", fields: [partenaireId], references: [id])
-  commandes    Commande[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id              String           @id @default(uuid())
+  type            String           @default("particulier") // particulier, partenaire
+  nom             String
+  prenom          String?
+  email           String?
+  telephone       String           // Required
+  adresse         String?
+  ville           String?
+  pays            String           @default("Côte d'Ivoire")
+  isActive        Boolean          @default(true)
+  partenaireId    String?
+  partenaire      Partenaire?      @relation("ClientPartenaire", fields: [partenaireId], references: [id])
+  commandes       Commande[]
+  clientBoutique  ClientBoutique?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([telephone])
   @@index([nom])
 }
 
 model Commande {
-  id              String          @id @default(uuid())
-  reference       String          @unique // CMD-YYYY-XXXX
-  date            DateTime        @default(now())
-  clientId        String
-  client          Client          @relation(fields: [clientId], references: [id])
-  statut          String          @default("en_attente") // en_attente, confirmee, en_preparation, expediee, livree, annulee
-  modePaiement    String?         // especes, mobile_money, virement, carte
-  statutPaiement  String          @default("en_attente") // en_attente, partiel, paye
-  montantPaye     Float           @default(0)
-  adresseLivraison String?
-  notes           String?
-  documentPath    String?         // Path to uploaded document
-  documentName    String?         // Original filename
-  lignes          CommandeLigne[]
-  totalHT         Float           @default(0)
-  totalTTC        Float           @default(0)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id                String           @id @default(uuid())
+  reference         String           @unique // CMD-YYYY-XXXX
+  date              DateTime         @default(now())
+  clientId          String
+  client            Client           @relation(fields: [clientId], references: [id])
+  clientBoutiqueId  String?
+  clientBoutique    ClientBoutique?  @relation(fields: [clientBoutiqueId], references: [id])
+  statut            String           @default("en_attente") // en_attente, confirmee, en_preparation, expediee, livree, annulee
+  modePaiement      String?          // especes, mobile_money, virement, carte
+  statutPaiement    String           @default("en_attente") // en_attente, partiel, paye
+  montantPaye       Float            @default(0)
+  adresseLivraison  String?
+  notes             String?
+  documentPath      String?          // Path to uploaded document
+  documentName      String?          // Original filename
+  lignes            CommandeLigne[]
+  totalHT           Float            @default(0)
+  totalTTC          Float            @default(0)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@index([clientId])
+  @@index([clientBoutiqueId])
   @@index([statut])
   @@index([date])
 }
@@ -1252,6 +1256,41 @@ model ProduitEmarket {
   updatedAt    DateTime  @updatedAt
 
   @@index([isPublished])
+}
+
+model ClientBoutique {
+  id                    String                  @id @default(uuid())
+  nom                   String
+  prenom                String?
+  email                 String                  @unique
+  telephone             String
+  passwordHash          String
+  adresse               String?
+  ville                 String?
+  isEmailVerified       Boolean                 @default(false)
+  emailVerificationToken String?
+  emailVerificationExpiry DateTime?
+  clientId              String?                 @unique
+  client                Client?                 @relation(fields: [clientId], references: [id])
+  commandes             Commande[]
+  sessions              ClientBoutiqueSession[]
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  @@index([email])
+  @@index([telephone])
+}
+
+model ClientBoutiqueSession {
+  id               String          @id @default(uuid())
+  clientBoutiqueId String
+  clientBoutique   ClientBoutique  @relation(fields: [clientBoutiqueId], references: [id], onDelete: Cascade)
+  token            String          @unique
+  expiresAt        DateTime
+  createdAt        DateTime        @default(now())
+
+  @@index([token])
+  @@index([clientBoutiqueId])
 }
 
 model Charge {

@@ -14,7 +14,7 @@ export interface BoutiqueClientSession {
   telephone: string;
   adresse: string | null;
   ville: string | null;
-  emailVerified: boolean;
+  isEmailVerified: boolean;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -34,7 +34,7 @@ export async function createBoutiqueSession(clientId: string): Promise<string> {
   const expiresAt = new Date(Date.now() + SESSION_DURATION);
 
   await prisma.clientBoutiqueSession.create({
-    data: { clientId, token, expiresAt },
+    data: { clientBoutiqueId: clientId, token, expiresAt },
   });
 
   return token;
@@ -64,7 +64,7 @@ export async function getBoutiqueClientFromCookie(): Promise<BoutiqueClientSessi
   const session = await prisma.clientBoutiqueSession.findUnique({
     where: { token },
     include: {
-      client: {
+      clientBoutique: {
         select: {
           id: true,
           nom: true,
@@ -73,14 +73,13 @@ export async function getBoutiqueClientFromCookie(): Promise<BoutiqueClientSessi
           telephone: true,
           adresse: true,
           ville: true,
-          emailVerified: true,
-          isActive: true,
+          isEmailVerified: true,
         },
       },
     },
   });
 
-  if (!session || session.expiresAt < new Date() || !session.client.isActive) {
+  if (!session || session.expiresAt < new Date() || !session.clientBoutique) {
     if (session) {
       await prisma.clientBoutiqueSession.delete({ where: { id: session.id } }).catch(() => {});
     }
@@ -88,13 +87,13 @@ export async function getBoutiqueClientFromCookie(): Promise<BoutiqueClientSessi
   }
 
   return {
-    id: session.client.id,
-    nom: session.client.nom,
-    prenom: session.client.prenom,
-    email: session.client.email,
-    telephone: session.client.telephone,
-    adresse: session.client.adresse,
-    ville: session.client.ville,
-    emailVerified: session.client.emailVerified,
+    id: session.clientBoutique.id,
+    nom: session.clientBoutique.nom,
+    prenom: session.clientBoutique.prenom,
+    email: session.clientBoutique.email,
+    telephone: session.clientBoutique.telephone,
+    adresse: session.clientBoutique.adresse,
+    ville: session.clientBoutique.ville,
+    isEmailVerified: session.clientBoutique.isEmailVerified,
   };
 }

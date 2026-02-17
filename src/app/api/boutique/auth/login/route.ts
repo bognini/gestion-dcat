@@ -24,16 +24,16 @@ export async function POST(request: NextRequest) {
       where: { email: email.toLowerCase().trim() },
     });
 
-    if (!client || !client.isActive) {
+    if (!client) {
       return NextResponse.json({ error: 'Identifiants invalides' }, { status: 401 });
     }
 
-    const isValid = await verifyPassword(password, client.password);
+    const isValid = await verifyPassword(password, client.passwordHash);
     if (!isValid) {
       return NextResponse.json({ error: 'Identifiants invalides' }, { status: 401 });
     }
 
-    if (!client.emailVerified) {
+    if (!client.isEmailVerified) {
       return NextResponse.json(
         { error: 'Veuillez vérifier votre adresse email avant de vous connecter. Consultez votre boîte mail.' },
         { status: 403 }
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         telephone: client.telephone,
         adresse: client.adresse,
         ville: client.ville,
-        emailVerified: client.emailVerified,
+        isEmailVerified: client.isEmailVerified,
       },
     });
   } catch (error) {

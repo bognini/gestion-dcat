@@ -10,24 +10,24 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Token manquant' }, { status: 400 });
     }
 
-    const client = await prisma.clientBoutique.findUnique({
-      where: { verificationToken: token },
+    const client = await prisma.clientBoutique.findFirst({
+      where: { emailVerificationToken: token },
     });
 
     if (!client) {
       return NextResponse.json({ error: 'Token invalide' }, { status: 400 });
     }
 
-    if (client.verificationExpires && client.verificationExpires < new Date()) {
+    if (client.emailVerificationExpiry && client.emailVerificationExpiry < new Date()) {
       return NextResponse.json({ error: 'Token expiré. Veuillez vous réinscrire.' }, { status: 400 });
     }
 
     await prisma.clientBoutique.update({
       where: { id: client.id },
       data: {
-        emailVerified: true,
-        verificationToken: null,
-        verificationExpires: null,
+        isEmailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpiry: null,
       },
     });
 

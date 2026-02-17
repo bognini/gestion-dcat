@@ -54,11 +54,11 @@ export async function POST(request: NextRequest) {
         prenom: prenom?.trim() || null,
         email: email.toLowerCase().trim(),
         telephone: telephone.trim(),
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         adresse: adresse?.trim() || null,
         ville: ville?.trim() || null,
-        verificationToken,
-        verificationExpires,
+        emailVerificationToken: verificationToken,
+        emailVerificationExpiry: verificationExpires,
       },
     });
 

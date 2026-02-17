@@ -10,7 +10,7 @@ export interface BoutiqueClient {
   telephone: string;
   adresse: string | null;
   ville: string | null;
-  emailVerified: boolean;
+  isEmailVerified: boolean;
 }
 
 interface BoutiqueAuthContextType {
