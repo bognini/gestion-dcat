@@ -452,18 +452,25 @@ function NouveauMouvementContent() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="prixVenteDefinitif">Prix de vente définitif (CFA)</Label>
+                <Label htmlFor="prixVenteDefinitif">Prix de vente définitif (CFA, à l&apos;unité)</Label>
                 <Input
                   id="prixVenteDefinitif"
                   type="number"
                   min="0"
                   value={formData.prixVenteDefinitif}
                   onChange={(e) => setFormData({ ...formData, prixVenteDefinitif: e.target.value })}
-                  placeholder={selectedProduit?.prixVenteMin ? `Min: ${selectedProduit.prixVenteMin}` : 'Prix de vente'}
+                  placeholder={selectedProduit?.prixVenteMin ? `Min: ${selectedProduit.prixVenteMin}` : 'Prix de vente unitaire'}
                 />
                 {selectedProduit?.prixVenteMin && Number(formData.prixVenteDefinitif) < selectedProduit.prixVenteMin && formData.prixVenteDefinitif && (
                   <p className="text-sm text-orange-500">
                     Attention: Prix inférieur au minimum ({selectedProduit.prixVenteMin} CFA)
+                  </p>
+                )}
+                {formData.prixVenteDefinitif && formData.quantite > 1 && (
+                  <p className="text-sm text-muted-foreground">
+                    Total: <span className="font-medium text-foreground">
+                      {(Number(formData.prixVenteDefinitif) * formData.quantite).toLocaleString('fr-FR')} CFA
+                    </span> ({formData.quantite} × {Number(formData.prixVenteDefinitif).toLocaleString('fr-FR')})
                   </p>
                 )}
               </div>

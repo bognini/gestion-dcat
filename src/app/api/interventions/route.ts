@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
     if (statut && statut !== 'all') where.statut = statut;
     if (type && type !== 'all') where.typeMaintenance = type;
 
+    const limit = Math.min(parseInt(request.nextUrl.searchParams.get('limit') || '200'), 500);
+
     const interventions = await prisma.intervention.findMany({
+      take: limit,
       where,
       include: {
         partenaire: {

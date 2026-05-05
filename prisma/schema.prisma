@@ -48,6 +48,9 @@ model Utilisateur {
   missionParticipations MissionParticipant[]
   tachesMissionResponsable TacheMission[] @relation("TacheMissionResponsable")
   operationsResponsable Operation[] @relation("OperationResponsable")
+
+  @@index([role])
+  @@index([isActive])
 }
 
 model Session {
@@ -621,6 +624,7 @@ model Produit {
   @@index([familleId])
   @@index([modeleId])
   @@index([isPublished])
+  @@index([emplacementId])
 }
 
 model ProduitImage {
@@ -699,6 +703,8 @@ model Partenaire {
   contratsPrestataires ContratPrestataire[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+
+  @@index([type])
 }
 
 model Contact {

@@ -85,7 +85,9 @@ export default function StatistiquesPage() {
     outOfStockCount: produits.filter(p => p.quantite === 0).length,
     recentEntrees: mouvements.filter(m => m.type === 'ENTREE').reduce((sum, m) => sum + m.quantite, 0),
     recentSorties: mouvements.filter(m => m.type === 'SORTIE').reduce((sum, m) => sum + m.quantite, 0),
-    totalVentes: mouvements.filter(m => m.type === 'SORTIE' && m.prixVenteDefinitif).reduce((sum, m) => sum + (m.prixVenteDefinitif || 0), 0),
+    totalVentes: mouvements
+      .filter(m => m.type === 'SORTIE' && m.prixVenteDefinitif)
+      .reduce((sum, m) => sum + (m.prixVenteDefinitif || 0) * m.quantite, 0),
   };
 
   // Top products by quantity

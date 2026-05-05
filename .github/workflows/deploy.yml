@@ -2,12 +2,11 @@ name: Deploy to Production
 
 on:
   workflow_dispatch:
-  # Disabled auto-deploy - using manual deployment
-  # push:
-  #   branches: [main]
-  #   paths-ignore:
-  #     - '**.md'
-  #     - 'docs/**'
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
 
 jobs:
   deploy:
@@ -44,6 +43,13 @@ jobs:
             sleep 10
             curl -sf https://gestion.dcat.ci/api/health || exit 1
             echo "✅ Deployment verified successfully"
+
+      - name: Cleanup expired sessions
+        run: |
+          curl -sf -X POST https://gestion.dcat.ci/api/internal/cleanup \
+            -H "Authorization: Bearer ${{ secrets.CLEANUP_SECRET }}" \
+            -H "Content-Type: application/json" \
+            || echo "⚠️ Session cleanup skipped (CLEANUP_SECRET not set)"
 
       - name: Notify success
         if: success()

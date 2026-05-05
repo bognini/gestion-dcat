@@ -2,14 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const user = await getSessionFromCookie();
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
+    const limit = Math.min(parseInt(request.nextUrl.searchParams.get('limit') || '200'), 500);
+
     const factures = await prisma.facture.findMany({
+      take: limit,
       orderBy: { date: 'desc' },
       select: {
         id: true,

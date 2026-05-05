@@ -5,6 +5,11 @@ import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Disable endpoint entirely once initial setup is done
+    if (process.env.SETUP_DISABLED === 'true') {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
     // Rate limit: 3 attempts per 10 minutes per IP
     const ip = getClientIp(request);
     const rateLimit = checkRateLimit(`setup:${ip}`, { maxRequests: 3, windowSeconds: 600 });

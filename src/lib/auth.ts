@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { prisma } from './prisma';
 import { cookies } from 'next/headers';
 
@@ -24,12 +25,7 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 }
 
 export function generateToken(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  for (let i = 0; i < 64; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
+  return crypto.randomBytes(32).toString('hex');
 }
 
 export async function createSession(userId: string, userAgent?: string, ipAddress?: string): Promise<string> {

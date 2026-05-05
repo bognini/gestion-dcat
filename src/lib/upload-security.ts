@@ -22,7 +22,7 @@ const ALLOWED_IMAGE_MIMES = new Set([
   'image/png',
   'image/gif',
   'image/webp',
-  'image/svg+xml',
+  // image/svg+xml excluded: SVG can embed JavaScript and cause XSS if served with correct Content-Type
 ]);
 
 /** Dangerous file extensions that should always be blocked */
@@ -77,7 +77,7 @@ export function validateImageUpload(file: File): FileValidationResult {
   }
 
   if (!ALLOWED_IMAGE_MIMES.has(file.type)) {
-    return { valid: false, error: 'Seules les images (JPEG, PNG, GIF, WebP) sont autorisées' };
+    return { valid: false, error: 'Seules les images (JPEG, PNG, GIF, WebP) sont autorisées. Les fichiers SVG ne sont pas acceptés.' };
   }
 
   return { valid: true };

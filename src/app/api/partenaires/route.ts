@@ -13,7 +13,10 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const type = searchParams.get('type');
 
+    const limit = Math.min(parseInt(searchParams.get('limit') || '500'), 1000);
+
     const partenaires = await prisma.partenaire.findMany({
+      take: limit,
       where: {
         AND: [
           search ? {

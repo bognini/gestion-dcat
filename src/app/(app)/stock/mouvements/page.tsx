@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { 
-  ArrowLeftRight, 
-  Plus, 
+import {
+  ArrowLeftRight,
+  Plus,
   Search,
   ArrowLeft,
   Loader2,
@@ -13,7 +13,8 @@ import {
   Filter,
   Package,
   DollarSign,
-  CalendarDays
+  CalendarDays,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +35,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 import { formatDate, formatCurrency } from '@/lib/utils';
 
 interface Mouvement {
@@ -56,11 +68,15 @@ type PeriodFilter = 'all' | 'today' | 'week' | 'month' | 'year';
 
 export default function MouvementsPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [mouvements, setMouvements] = useState<Mouvement[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [filterPeriod, setFilterPeriod] = useState<PeriodFilter>('all');
+  const [mouvementToDelete, setMouvementToDelete] = useState<Mouvement | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchMouvements();
@@ -77,6 +93,32 @@ export default function MouvementsPage() {
       toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de charger les mouvements' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!mouvementToDelete) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/mouvements/${mouvementToDelete.id}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Erreur lors de la suppression');
+      }
+      setMouvements((prev) => prev.filter((m) => m.id !== mouvementToDelete.id));
+      toast({
+        title: 'Mouvement supprimé',
+        description: 'Le stock du produit a été ajusté en conséquence.',
+      });
+      setMouvementToDelete(null);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Suppression impossible',
+        description: error instanceof Error ? error.message : 'Une erreur est survenue',
+      });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -111,7 +153,9 @@ export default function MouvementsPage() {
   const totals = {
     entrees: mouvements.filter(m => m.type === 'ENTREE').reduce((sum, m) => sum + m.quantite, 0),
     sorties: mouvements.filter(m => m.type === 'SORTIE').reduce((sum, m) => sum + m.quantite, 0),
-    totalVentes: mouvements.filter(m => m.type === 'SORTIE' && m.prixVenteDefinitif).reduce((sum, m) => sum + (m.prixVenteDefinitif || 0), 0),
+    totalVentes: mouvements
+      .filter(m => m.type === 'SORTIE' && m.prixVenteDefinitif)
+      .reduce((sum, m) => sum + (m.prixVenteDefinitif || 0) * m.quantite, 0),
   };
 
   return (
@@ -230,20 +274,21 @@ export default function MouvementsPage() {
                 <TableHead className="text-right w-28 whitespace-nowrap">Prix déf.</TableHead>
                 <TableHead className="w-28">Opérateur</TableHead>
                 <TableHead>Détails</TableHead>
+                {isAdmin && <TableHead className="w-12 text-right">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : filteredMouvements.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    {searchQuery || filterType !== 'all' 
-                      ? 'Aucun mouvement trouvé' 
+                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-center py-8 text-muted-foreground">
+                    {searchQuery || filterType !== 'all'
+                      ? 'Aucun mouvement trouvé'
                       : 'Aucun mouvement enregistré'}
                   </TableCell>
                 </TableRow>
@@ -285,9 +330,20 @@ export default function MouvementsPage() {
                       </span>
                     </TableCell>
                     <TableCell className="text-right text-sm whitespace-nowrap">
-                      {mouvement.type === 'SORTIE' && mouvement.prixVenteDefinitif 
-                        ? <span className="text-blue-600 font-medium">{formatCurrency(mouvement.prixVenteDefinitif)}</span>
-                        : '-'}
+                      {mouvement.type === 'SORTIE' && mouvement.prixVenteDefinitif ? (
+                        <div className="flex flex-col items-end">
+                          <span className="text-blue-600 font-medium">
+                            {formatCurrency(mouvement.prixVenteDefinitif * mouvement.quantite)}
+                          </span>
+                          {mouvement.quantite > 1 && (
+                            <span className="text-xs text-muted-foreground">
+                              {formatCurrency(mouvement.prixVenteDefinitif)} / unité
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        '-'
+                      )}
                     </TableCell>
                     <TableCell className="text-sm">
                       <div className="line-clamp-2 max-w-[100px]">
@@ -297,6 +353,19 @@ export default function MouvementsPage() {
                     <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
                       {mouvement.fournisseur?.nom || mouvement.destination || mouvement.projet?.nom || mouvement.commentaire || '-'}
                     </TableCell>
+                    {isAdmin && (
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setMouvementToDelete(mouvement)}
+                          title="Supprimer le mouvement"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))
               )}
@@ -304,6 +373,46 @@ export default function MouvementsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={!!mouvementToDelete}
+        onOpenChange={(open) => !open && !deleting && setMouvementToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce mouvement&nbsp;?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  Cette action est irréversible. Le stock du produit sera{' '}
+                  <span className="font-medium">
+                    {mouvementToDelete?.type === 'ENTREE' ? 'diminué' : 'augmenté'}
+                  </span>{' '}
+                  de <span className="font-medium">{mouvementToDelete?.quantite}</span> unité(s).
+                </p>
+                {mouvementToDelete && (
+                  <div className="rounded-md bg-muted p-3 text-sm">
+                    <div><span className="text-muted-foreground">Produit&nbsp;:</span> {mouvementToDelete.produit.nom}</div>
+                    <div><span className="text-muted-foreground">Type&nbsp;:</span> {mouvementToDelete.type === 'ENTREE' ? 'Entrée' : 'Sortie'}</div>
+                    <div><span className="text-muted-foreground">Date&nbsp;:</span> {new Date(mouvementToDelete.date).toLocaleString('fr-FR')}</div>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleDelete(); }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

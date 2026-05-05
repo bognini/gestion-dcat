@@ -2,15 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const user = await getSessionFromCookie();
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
+    const limit = Math.min(parseInt(request.nextUrl.searchParams.get('limit') || '200'), 500);
+
     const employes = await prisma.employe.findMany({
+      take: limit,
       orderBy: { nom: 'asc' },
+      // photo and cv are binary blobs — excluded here, fetched only via /api/employes/[id]
+      omit: { photo: true, cv: true },
       include: {
         utilisateur: {
           select: { id: true, username: true, email: true, isActive: true },
@@ -21,14 +26,7 @@ export async function GET() {
       },
     });
 
-    // Remove binary data from response
-    const result = employes.map(e => ({
-      ...e,
-      photo: undefined,
-      cv: undefined,
-      hasPhoto: !!e.photo,
-      hasCV: !!e.cv,
-    }));
+    const result = employes.map(e => ({ ...e, hasPhoto: false, hasCV: false }));
 
     return NextResponse.json(result);
   } catch (error) {
