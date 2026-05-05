@@ -8,7 +8,7 @@ RUN apt-get update \
 FROM base AS dependency-stage
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
-RUN npm ci
+RUN npm install
 
 # Stage 2: Build
 FROM base AS build-stage
