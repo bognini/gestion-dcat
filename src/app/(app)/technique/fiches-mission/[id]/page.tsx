@@ -437,7 +437,7 @@ export default function FicheMissionDetailPage({ params }: { params: Promise<{ i
           <CardContent>
             {taches.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-4">
-                Aucune tâche. Cliquez sur "Ajouter" pour créer une tâche.
+                Aucune tâche. Cliquez sur &quot;Ajouter&quot; pour créer une tâche.
               </p>
             ) : (
               <div className="space-y-2">
@@ -553,7 +553,7 @@ export default function FicheMissionDetailPage({ params }: { params: Promise<{ i
 
       <div className="hidden print:block print-footer">
         <div>DCAT (Data Communications & All Technologies) • E-Mail : info@dcat.ci • Site Web : www.dcat.ci</div>
-        <div style={{ marginTop: 4 }}>S.A.R.L. au Capital de 10.000.000 FCFA • R.C. N° CI-ABJ-2004-B-4038 • C.C. N° 0411512 K • Régime d'imposition : Réel Normal • Centre d'imposition : D.G.E.</div>
+        <div style={{ marginTop: 4 }}>S.A.R.L. au Capital de 10.000.000 FCFA • R.C. N° CI-ABJ-2004-B-4038 • C.C. N° 0411512 K • Régime d&apos;imposition : Réel Normal • Centre d&apos;imposition : D.G.E.</div>
         <div style={{ marginTop: 4 }}>Compte GTBANK N°CI007 01030 059262300100 RIB=65 • Angré Château, Imm.BATIM, 1er Etage, Porte A108 - 27 B.P 826 Abidjan 27 • Tél.: (+225) 27 21 37 33 63 / 27 22 46 82 07</div>
       </div>
     </div>

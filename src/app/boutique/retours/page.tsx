@@ -147,8 +147,8 @@ export default function RetoursPage() {
           <div className="bg-slate-50 rounded-lg p-6 mb-8">
             <h3 className="font-semibold text-slate-900 mb-4">Remboursements</h3>
             <div className="space-y-3 text-sm text-slate-600">
-              <p>Les remboursements sont effectués via le même mode de paiement utilisé lors de l'achat.</p>
-              <p>Les frais de livraison initiaux ne sont pas remboursés, sauf en cas d'erreur de notre part.</p>
+              <p>Les remboursements sont effectués via le même mode de paiement utilisé lors de l&apos;achat.</p>
+              <p>Les frais de livraison initiaux ne sont pas remboursés, sauf en cas d&apos;erreur de notre part.</p>
               <p>Les frais de retour sont à la charge du client, sauf si le produit est défectueux ou non conforme.</p>
             </div>
           </div>
@@ -156,7 +156,7 @@ export default function RetoursPage() {
           {/* Contact CTA */}
           <div className="text-center p-8 bg-slate-50 rounded-lg">
             <p className="text-slate-600 mb-4">
-              Besoin d'aide ? Contactez notre service client
+              Besoin d&apos;aide ? Contactez notre service client
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button asChild variant="outline" className="border-slate-300">

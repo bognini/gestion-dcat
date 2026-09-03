@@ -109,7 +109,7 @@ export default function ProgrammeEquipesPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="jour">Aujourd'hui</SelectItem>
+              <SelectItem value="jour">Aujourd&apos;hui</SelectItem>
               <SelectItem value="semaine">Cette semaine</SelectItem>
               <SelectItem value="mois">Ce mois</SelectItem>
             </SelectContent>

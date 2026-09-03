@@ -52,3 +52,6 @@ logs
 
 # Reference folder (pulled repo)
 stockflow-reference/
+
+# Claude Code (aperçu local)
+.claude/launch.json

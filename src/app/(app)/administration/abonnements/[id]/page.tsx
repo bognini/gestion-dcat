@@ -520,7 +520,7 @@ export default function AbonnementDetailPage({ params }: { params: Promise<{ id:
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer cet abonnement ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible. L'abonnement {abonnement.nom} et toutes ses échéances seront supprimés.
+              Cette action est irréversible. L&apos;abonnement {abonnement.nom} et toutes ses échéances seront supprimés.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

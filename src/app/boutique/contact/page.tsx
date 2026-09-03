@@ -80,7 +80,7 @@ export default function ContactPage() {
           <div className="text-center mb-12">
             <h1 className="text-3xl font-bold text-slate-900 mb-4">Nous Contacter</h1>
             <p className="text-slate-600 max-w-2xl mx-auto">
-              Une question ? Un projet ? N'hésitez pas à nous contacter.
+              Une question ? Un projet ? N&apos;hésitez pas à nous contacter.
             </p>
           </div>
 
@@ -120,7 +120,7 @@ export default function ContactPage() {
               <p className="text-slate-600 text-sm mb-2">
                 Angré Château, Immeuble BATIM,<br />
                 1er étage, Porte A108<br />
-                Abidjan, Côte d'Ivoire
+                Abidjan, Côte d&apos;Ivoire
               </p>
               <a 
                 href="https://google.com/maps/place/DCAT+(Data+Communications+%26+All+Technologies)/data=!4m2!3m1!1s0x0:0x8ac01db5ac44fb4b"

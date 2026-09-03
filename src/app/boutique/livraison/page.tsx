@@ -62,7 +62,7 @@ export default function LivraisonPage() {
             </div>
             <h1 className="text-3xl font-bold text-slate-900 mb-4">Livraison</h1>
             <p className="text-slate-600">
-              Nous livrons dans toute la Côte d'Ivoire
+              Nous livrons dans toute la Côte d&apos;Ivoire
             </p>
           </div>
 

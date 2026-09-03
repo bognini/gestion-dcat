@@ -673,7 +673,7 @@ export default function ContratsClientsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Générer les échéances ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action va générer 12 mois d'échéances pour le contrat{' '}
+              Cette action va générer 12 mois d&apos;échéances pour le contrat{' '}
               <strong>{echeanceDialog?.numero}</strong> ({echeanceDialog?.titre}).
               <br /><br />
               Les échéances seront visibles dans la fiche détaillée du contrat.

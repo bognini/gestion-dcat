@@ -1,9 +1,8 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-interface MoneyInputProps extends Omit<React.ComponentProps<"input">, 'type'> {
-  // Remove type from props as we always use number
-}
+// Le type est retiré des props : le composant force toujours un champ numérique
+type MoneyInputProps = Omit<React.ComponentProps<"input">, 'type'>;
 
 const MoneyInput = React.forwardRef<HTMLInputElement, MoneyInputProps>(
   ({ className, onWheel, ...props }, ref) => {

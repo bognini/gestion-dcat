@@ -179,7 +179,7 @@ export default function EmarketProduitsPage() {
     setUsePercentage(false);
     setPromoPercentage('');
     // Determine promo type based on dates
-    const p = produit as any;
+    const p = produit as Produit & { promoStart?: string | null; promoEnd?: string | null };
     if (p.promoStart || p.promoEnd) {
       setPromoType('period');
       setPromoStart(p.promoStart ? new Date(p.promoStart).toISOString().split('T')[0] : '');
@@ -212,7 +212,7 @@ export default function EmarketProduitsPage() {
     try {
       const newPromoPrice = promoPrice ? parseFloat(promoPrice) : null;
       
-      const payload: any = { promoPrice: newPromoPrice };
+      const payload: { promoPrice: number | null; promoStart?: string | null; promoEnd?: string | null } = { promoPrice: newPromoPrice };
       
       if (promoType === 'period') {
         payload.promoStart = promoStart || null;
@@ -621,7 +621,7 @@ export default function EmarketProduitsPage() {
           <DialogHeader>
             <DialogTitle>Prix promotionnel</DialogTitle>
             <DialogDescription>
-              Définir un prix promo pour "{selectedProduit?.nom}"
+              Définir un prix promo pour &quot;{selectedProduit?.nom}&quot;
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

@@ -336,7 +336,7 @@ export default function AbonnementsPage() {
     try {
       // Calculate next payment date
       const currentDate = new Date(echeanceForm.datePaiement);
-      let nextPaymentDate = new Date(currentDate);
+      const nextPaymentDate = new Date(currentDate);
       if (selectedAbonnementForEcheance.periodicite === 'annuel') {
         nextPaymentDate.setFullYear(currentDate.getFullYear() + 1);
       } else {
@@ -444,7 +444,7 @@ export default function AbonnementsPage() {
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2">
-                  <Label>Nom de l'abonnement *</Label>
+                  <Label>Nom de l&apos;abonnement *</Label>
                   <Input
                     value={form.nom}
                     onChange={(e) => setForm({ ...form, nom: e.target.value })}
@@ -502,7 +502,7 @@ export default function AbonnementsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Date d'expiration</Label>
+                  <Label>Date d&apos;expiration</Label>
                   <Input
                     type="date"
                     value={form.dateExpiration}
@@ -737,9 +737,9 @@ export default function AbonnementsPage() {
       <AlertDialog open={!!deleteDialog} onOpenChange={(open) => !open && setDeleteDialog(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer l'abonnement ?</AlertDialogTitle>
+            <AlertDialogTitle>Supprimer l&apos;abonnement ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action supprimera définitivement l'abonnement{' '}
+              Cette action supprimera définitivement l&apos;abonnement{' '}
               <strong>{deleteDialog?.nom}</strong> et toutes ses échéances.
             </AlertDialogDescription>
           </AlertDialogHeader>

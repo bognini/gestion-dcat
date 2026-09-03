@@ -158,7 +158,7 @@ function DevisPageContent() {
             </div>
             <h1 className="text-3xl font-bold text-slate-900 mb-4">Demande de devis</h1>
             <p className="text-slate-600 max-w-xl mx-auto">
-              Vous avez besoin de plusieurs produits ou d'une commande spéciale ? 
+              Vous avez besoin de plusieurs produits ou d&apos;une commande spéciale ? 
               Remplissez ce formulaire et nous vous enverrons un devis personnalisé.
             </p>
           </div>

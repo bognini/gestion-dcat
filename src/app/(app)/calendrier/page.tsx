@@ -810,9 +810,9 @@ export default function CalendrierPage() {
       <AlertDialog open={!!deleteEvent} onOpenChange={(open) => !open && setDeleteEvent(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer l'\u00e9v\u00e9nement ?</AlertDialogTitle>
+            <AlertDialogTitle>Supprimer l&apos;\u00e9v\u00e9nement ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action supprimera d\u00e9finitivement l'\u00e9v\u00e9nement{' '}
+              Cette action supprimera d\u00e9finitivement l&apos;\u00e9v\u00e9nement{' '}
               <strong>{deleteEvent?.titre}</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>

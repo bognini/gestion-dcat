@@ -86,7 +86,7 @@ export default function FAQPage() {
 
           <div className="mt-12 text-center p-8 bg-slate-50 rounded-lg">
             <p className="text-slate-600 mb-4">
-              Vous n'avez pas trouvé la réponse à votre question ?
+              Vous n&apos;avez pas trouvé la réponse à votre question ?
             </p>
             <Button asChild className="bg-blue-600 hover:bg-blue-700">
               <Link href="/boutique/contact">Contactez-nous</Link>

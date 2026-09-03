@@ -221,7 +221,7 @@ curl -s https://gestion.dcat.ci/api/health
 |------|---------|
 | `Dockerfile` | Multi-stage build for Next.js app |
 | `docker-compose.yml` | Full setup with Traefik (local dev) |
-| `docker-compose.prod.yml` | Production setup for VM (no Traefik) |
+| `docker-compose.prod.yml` | Production setup for VM (no Traefik). **Non versionné** : présent uniquement sur le serveur. Modèle de référence : `docker-compose.prod.example.yml` (versionné) — reportez-y toute modification faite sur le serveur. |
 | `.env` | Environment variables (gitignored) |
 | `.env.example` | Template for environment variables |
 | `prisma/schema.prisma` | Database schema |

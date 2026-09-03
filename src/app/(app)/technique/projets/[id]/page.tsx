@@ -903,7 +903,7 @@ export default function ProjetDetailPage({ params }: { params: Promise<{ id: str
             <CardContent>
               {projet.operations.length === 0 ? (
                 <p className="text-center py-8 text-muted-foreground">
-                  Aucune opération pour ce projet. Cliquez sur "Nouvelle opération" pour en créer une.
+                  Aucune opération pour ce projet. Cliquez sur &quot;Nouvelle opération&quot; pour en créer une.
                 </p>
               ) : (
                 <div className="space-y-6">
@@ -1307,7 +1307,7 @@ export default function ProjetDetailPage({ params }: { params: Promise<{ id: str
       <AlertDialog open={!!operationToDelete} onOpenChange={(open) => !open && setOperationToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer l'opération ?</AlertDialogTitle>
+            <AlertDialogTitle>Supprimer l&apos;opération ?</AlertDialogTitle>
             <AlertDialogDescription>
               Cette action est irréversible. Les tâches de cette opération seront supprimées.
             </AlertDialogDescription>
@@ -1341,7 +1341,7 @@ export default function ProjetDetailPage({ params }: { params: Promise<{ id: str
       <Dialog open={operationEditDialog} onOpenChange={(open) => { if (!open) { setOperationEditDialog(false); setEditingOperationId(null); } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifier l'opération</DialogTitle>
+            <DialogTitle>Modifier l&apos;opération</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -1529,7 +1529,7 @@ export default function ProjetDetailPage({ params }: { params: Promise<{ id: str
               className="w-full"
             >
               {savingOperation && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Créer l'opération
+              Créer l&apos;opération
             </Button>
           </div>
         </DialogContent>
@@ -1600,7 +1600,7 @@ export default function ProjetDetailPage({ params }: { params: Promise<{ id: str
           <AlertDialogHeader>
             <AlertDialogTitle>Changer le statut de la tâche ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Voulez-vous changer le statut de "{statusChangeDialog?.taskName}" de{' '}
+              Voulez-vous changer le statut de &quot;{statusChangeDialog?.taskName}&quot; de{' '}
               <strong>{statusChangeDialog?.currentStatus === 'a_faire' ? 'À faire' : statusChangeDialog?.currentStatus === 'en_cours' ? 'En cours' : 'Terminé'}</strong>{' '}
               à <strong>{statusChangeDialog?.newStatus === 'a_faire' ? 'À faire' : statusChangeDialog?.newStatus === 'en_cours' ? 'En cours' : 'Terminé'}</strong> ?
             </AlertDialogDescription>
@@ -1618,7 +1618,7 @@ export default function ProjetDetailPage({ params }: { params: Promise<{ id: str
       <Dialog open={folderDialog} onOpenChange={setFolderDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nouveau dossier d'images</DialogTitle>
+            <DialogTitle>Nouveau dossier d&apos;images</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">

@@ -365,7 +365,7 @@ export default function ContratsPrestatairesPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Délai d'exécution</Label>
+                  <Label>Délai d&apos;exécution</Label>
                   <Input
                     value={form.delaiExecution}
                     onChange={(e) => setForm({ ...form, delaiExecution: e.target.value })}
@@ -694,7 +694,7 @@ export default function ContratsPrestatairesPage() {
               </div>
               {detailDialog.delaiExecution && (
                 <div>
-                  <p className="text-sm text-muted-foreground">Délai d'exécution</p>
+                  <p className="text-sm text-muted-foreground">Délai d&apos;exécution</p>
                   <p>{detailDialog.delaiExecution}</p>
                 </div>
               )}

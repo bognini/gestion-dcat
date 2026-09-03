@@ -1,0 +1,74 @@
+# Exemple de configuration de production (VM sans Traefik, reverse proxy sur l'hôte).
+# Sur le serveur, ce fichier existe sous le nom docker-compose.prod.yml (non versionné,
+# car il peut contenir des ajustements propres à la machine). Gardez-le synchronisé
+# avec cet exemple : le workflow deploy.yml exécute
+#   docker compose -f docker-compose.prod.yml build --no-cache && up -d --force-recreate
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner-stage
+    container_name: gestion_dcat_web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      prisma-migrate:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - AUTH_SECRET=${AUTH_SECRET}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-https://gestion.dcat.ci}
+      - SETUP_DISABLED=${SETUP_DISABLED:-true}
+      - CLEANUP_SECRET=${CLEANUP_SECRET}
+    ports:
+      - "127.0.0.1:3000:3000"   # exposé uniquement au reverse proxy local (nginx/caddy)
+    networks:
+      - gestion_network
+
+  db:
+    image: postgres:15-alpine
+    container_name: gestion_dcat_db
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-gestion_dcat}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-gestion_dcat}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gestion_network
+
+  # Applique les migrations Prisma (prisma migrate deploy) avant le démarrage de web
+  prisma-migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migration-stage
+    container_name: gestion_dcat_prisma
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    networks:
+      - gestion_network
+    restart: "no"
+
+volumes:
+  postgres_data:
+
+networks:
+  gestion_network:
+    driver: bridge
