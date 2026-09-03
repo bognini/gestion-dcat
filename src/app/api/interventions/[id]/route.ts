@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 
 export async function GET(
   request: NextRequest,
@@ -23,6 +24,7 @@ export async function GET(
         superviseur: {
           select: { id: true, nom: true, prenom: true },
         },
+        ticket: { select: { id: true, numero: true, statut: true, incident: true } },
         intervenants: {
           include: {
             utilisateur: {
@@ -54,11 +56,15 @@ export async function PUT(
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
+    const denied = requirePermission(user, 'technique', 'write');
+    if (denied) return denied;
+
     const { id } = await params;
     const data = await request.json();
 
     const existing = await prisma.intervention.findUnique({
       where: { id },
+      include: { ticket: { select: { id: true, statut: true } } },
     });
 
     if (!existing) {
@@ -66,7 +72,7 @@ export async function PUT(
     }
 
     const updateData: Record<string, unknown> = {};
-    
+
     if (data.date) updateData.date = new Date(data.date);
     if (data.partenaireId) updateData.partenaireId = data.partenaireId;
     if (data.problemeSignale?.trim()) updateData.problemeSignale = data.problemeSignale.trim();
@@ -80,38 +86,39 @@ export async function PUT(
     if (data.recommandations !== undefined) updateData.recommandations = data.recommandations?.trim() || null;
     if (data.statut) updateData.statut = data.statut;
 
-    // Update intervenants if provided
-    if (data.intervenantIds !== undefined) {
-      // Delete existing
-      await prisma.interventionIntervenant.deleteMany({
-        where: { interventionId: id },
-      });
-      // Create new
-      if (data.intervenantIds.length > 0) {
-        await prisma.interventionIntervenant.createMany({
-          data: data.intervenantIds.map((userId: string) => ({
-            interventionId: id,
-            userId,
-          })),
-        });
+    // Tout en une transaction : intervenants, intervention, et ticket lié
+    const intervention = await prisma.$transaction(async (tx) => {
+      if (data.intervenantIds !== undefined) {
+        await tx.interventionIntervenant.deleteMany({ where: { interventionId: id } });
+        if (data.intervenantIds.length > 0) {
+          await tx.interventionIntervenant.createMany({
+            data: data.intervenantIds.map((userId: string) => ({ interventionId: id, userId })),
+          });
+        }
       }
-    }
 
-    const intervention = await prisma.intervention.update({
-      where: { id },
-      data: updateData,
-      include: {
-        partenaire: {
-          select: { id: true, nom: true },
-        },
-        intervenants: {
-          include: {
-            utilisateur: {
-              select: { id: true, nom: true, prenom: true },
-            },
+      // Le ticket se ferme quand la fiche d'intervention est terminée, et se rouvre sinon.
+      // Mis à jour avant l'intervention pour que la réponse reflète le nouveau statut du ticket.
+      if (existing.ticket && data.statut) {
+        const newStatut = data.statut as string;
+        if (newStatut === 'termine' && existing.ticket.statut !== 'ferme') {
+          await tx.ticket.update({ where: { id: existing.ticket.id }, data: { statut: 'ferme', fermeAt: new Date() } });
+        } else if (newStatut !== 'termine' && existing.ticket.statut !== 'en_cours') {
+          await tx.ticket.update({ where: { id: existing.ticket.id }, data: { statut: 'en_cours', fermeAt: null } });
+        }
+      }
+
+      return tx.intervention.update({
+        where: { id },
+        data: updateData,
+        include: {
+          partenaire: { select: { id: true, nom: true } },
+          ticket: { select: { id: true, numero: true, statut: true } },
+          intervenants: {
+            include: { utilisateur: { select: { id: true, nom: true, prenom: true } } },
           },
         },
-      },
+      });
     });
 
     return NextResponse.json(intervention);
@@ -130,6 +137,9 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, 'technique', 'delete');
+    if (denied) return denied;
 
     if (user.role !== 'admin') {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });

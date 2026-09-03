@@ -53,6 +53,7 @@ interface Intervention {
   lieu: string | null;
   modeIntervention: string | null;
   partenaire: { id: string; nom: string };
+  ticket: { id: string; numero: string; statut: string } | null;
   intervenants: Array<{
     utilisateur: { id: string; nom: string; prenom: string | null };
   }>;
@@ -144,6 +145,12 @@ export default function InterventionsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/technique/tickets">
+              <AlertCircle className="mr-2 h-4 w-4" />
+              Tickets
+            </Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link href="/technique/interventions/rapport-mensuel">
               <FileText className="mr-2 h-4 w-4" />
@@ -281,6 +288,15 @@ export default function InterventionsPage() {
                       <Link href={`/technique/interventions/${intervention.id}`} className="hover:underline font-mono text-sm">
                         {intervention.reference}
                       </Link>
+                      {intervention.ticket && (
+                        <Link
+                          href={`/technique/tickets/${intervention.ticket.id}`}
+                          className="block text-xs text-muted-foreground hover:underline font-mono"
+                          title="Ticket d'incident lié"
+                        >
+                          {intervention.ticket.numero}
+                        </Link>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm">
                       <div className="flex items-center gap-1">

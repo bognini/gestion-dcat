@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  Wrench, 
+import {
+  Wrench,
   ArrowLeft,
   Loader2,
-  Save
+  Save,
+  Ticket as TicketIcon,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,14 +69,33 @@ const STATUTS = [
   { value: 'termine', label: 'Terminé' },
 ];
 
+interface TicketLie {
+  id: string;
+  numero: string;
+  statut: string;
+  incident: string;
+  partenaire: { id: string; nom: string };
+}
+
 export default function NouvelleInterventionPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <NouvelleInterventionForm />
+    </Suspense>
+  );
+}
+
+function NouvelleInterventionForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const ticketId = searchParams.get('ticketId');
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>([]);
   const [selectedIntervenants, setSelectedIntervenants] = useState<string[]>([]);
-  
+  const [ticket, setTicket] = useState<TicketLie | null>(null);
+
   const [typeIntervention, setTypeIntervention] = useState('intervention');
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -95,17 +116,34 @@ export default function NouvelleInterventionPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticketId]);
 
   const fetchData = async () => {
     try {
-      const [partRes, userRes] = await Promise.all([
+      const [partRes, userRes, ticketRes] = await Promise.all([
         fetch('/api/partenaires'),
         fetch('/api/utilisateurs'),
+        ticketId ? fetch(`/api/tickets/${ticketId}`) : Promise.resolve(null),
       ]);
-      
+
       if (partRes.ok) setPartenaires(await partRes.json());
       if (userRes.ok) setUtilisateurs(await userRes.json());
+      if (ticketRes) {
+        if (!ticketRes.ok) {
+          toast({ variant: 'destructive', title: 'Ticket introuvable', description: 'Le ticket indiqué n\'existe plus.' });
+          router.push('/technique/tickets');
+          return;
+        }
+        const t: TicketLie = await ticketRes.json();
+        setTicket(t);
+        // Préremplissage depuis le ticket : client et problème signalé sont verrouillés
+        setFormData(prev => ({
+          ...prev,
+          partenaireId: t.partenaire.id,
+          problemeSignale: prev.problemeSignale || t.incident,
+        }));
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -129,6 +167,7 @@ export default function NouvelleInterventionPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
+          ticketId: ticket?.id || null,
           typeMaintenance: typeIntervention,
           intervenantIds: selectedIntervenants,
         }),
@@ -170,10 +209,47 @@ export default function NouvelleInterventionPage() {
             Nouvelle Intervention
           </h2>
           <p className="text-muted-foreground">
-            Créez une nouvelle fiche d&apos;intervention
+            {ticket ? `Fiche d'intervention pour le ticket ${ticket.numero}` : 'Créez une nouvelle fiche d\'intervention'}
           </p>
         </div>
       </div>
+
+      {ticket ? (
+        <Card className="border-blue-300 bg-blue-50/50 dark:bg-blue-950/20">
+          <CardContent className="py-4 flex flex-wrap items-center gap-3">
+            <TicketIcon className="h-5 w-5 text-blue-600" />
+            <div className="flex-1 min-w-64">
+              <p className="font-medium">
+                Liée au ticket{' '}
+                <Link href={`/technique/tickets/${ticket.id}`} className="font-mono hover:underline">{ticket.numero}</Link>
+                {' '}— {ticket.partenaire.nom}
+              </p>
+              <p className="text-sm text-muted-foreground truncate">{ticket.incident}</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Passer cette intervention à « Terminé » fermera le ticket.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-amber-300 bg-amber-50/50 dark:bg-amber-950/20">
+          <CardContent className="py-4 flex flex-wrap items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600" />
+            <div className="flex-1 min-w-64">
+              <p className="font-medium">Nouvelle intervention ? Commencez par un ticket d&apos;incident.</p>
+              <p className="text-sm text-muted-foreground">
+                Continuez ci-dessous uniquement pour le reporting d&apos;une intervention déjà réalisée.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/technique/tickets/nouveau">
+                <TicketIcon className="mr-2 h-4 w-4" />
+                Créer un ticket
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="grid gap-6 md:grid-cols-2">
@@ -257,9 +333,10 @@ export default function NouvelleInterventionPage() {
               
               <div className="space-y-2">
                 <Label htmlFor="partenaire">Partenaire / Client *</Label>
-                <Select 
-                  value={formData.partenaireId} 
+                <Select
+                  value={formData.partenaireId}
                   onValueChange={(v) => setFormData({ ...formData, partenaireId: v })}
+                  disabled={!!ticket}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionner un partenaire" />

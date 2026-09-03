@@ -127,6 +127,12 @@ export default function TechniquePage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
+            <Link href="/technique/tickets/nouveau">
+              <AlertCircle className="mr-2 h-4 w-4" />
+              Nouveau ticket
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
             <Link href="/technique/interventions/nouvelle">
               <Wrench className="mr-2 h-4 w-4" />
               Nouvelle intervention

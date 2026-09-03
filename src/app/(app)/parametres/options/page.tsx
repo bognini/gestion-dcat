@@ -63,6 +63,7 @@ export default function OptionsPage() {
   const [notificationEmails, setNotificationEmails] = useState('');
   const [notificationLists, setNotificationLists] = useState<Record<string, string>>({
     low_stock_alert: '',
+    ticket_created: '',
     new_user_alert: '',
     daily_report: '',
     weekly_report: '',
@@ -266,6 +267,7 @@ export default function OptionsPage() {
 
       const eventDefs = [
         { key: 'low_stock_alert', label: 'Alerte stock faible' },
+        { key: 'ticket_created', label: 'Support DCAT — nouveau ticket' },
         { key: 'new_user_alert', label: 'Nouvel utilisateur' },
         { key: 'daily_report', label: 'Rapport journalier' },
         { key: 'weekly_report', label: 'Rapport hebdomadaire' },
@@ -616,6 +618,20 @@ export default function OptionsPage() {
                     disabled={configLoading || configAccessDenied}
                   />
                   <p className="text-xs text-muted-foreground">Vide = désactiver cet événement (ignore le global)</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Emails - Support DCAT (nouveau ticket d&apos;incident)</Label>
+                  <Textarea
+                    value={notificationLists.ticket_created || ''}
+                    onChange={(e) => setNotificationLists({ ...notificationLists, ticket_created: e.target.value })}
+                    placeholder="support@dcat.ci"
+                    rows={4}
+                    disabled={configLoading || configAccessDenied}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Reçoit « Client INCIDENT SIGNALE TCK-… » à chaque création de ticket. Vide = désactiver cet événement (ignore le global)
+                  </p>
                 </div>
 
                 <div className="space-y-2">

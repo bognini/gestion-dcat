@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate, formatDuration } from '@/lib/utils';
+import { ticketStatutLabel } from '@/lib/tickets';
 
 interface Intervention {
   id: string;
@@ -64,6 +65,7 @@ interface Intervention {
   modeIntervention: string | null;
   createdAt: string;
   partenaire: { id: string; nom: string };
+  ticket: { id: string; numero: string; statut: string; incident: string } | null;
   superviseur: { id: string; nom: string; prenom: string | null } | null;
   intervenants: Array<{
     utilisateur: { id: string; nom: string; prenom: string | null };
@@ -274,6 +276,15 @@ export default function InterventionDetailPage({ params }: { params: Promise<{ i
           </div>
           <p className="text-muted-foreground">
             {formatDate(intervention.date)} • {intervention.partenaire.nom}
+            {intervention.ticket && (
+              <>
+                {' '}• Ticket{' '}
+                <Link href={`/technique/tickets/${intervention.ticket.id}`} className="font-mono hover:underline">
+                  {intervention.ticket.numero}
+                </Link>
+                {` (${ticketStatutLabel(intervention.ticket.statut).toLowerCase()})`}
+              </>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
