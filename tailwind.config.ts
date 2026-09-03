@@ -12,8 +12,20 @@ export default {
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         headline: ['var(--font-space-grotesk)', 'system-ui', 'sans-serif'],
+        boutique: ['var(--font-boutique)', 'var(--font-inter)', 'system-ui', 'sans-serif'],
       },
       colors: {
+        // Identité DCAT E-Market (boutique publique)
+        boutique: {
+          navy: '#0B2545',
+          navy2: '#13315C',
+          amber: '#F4A300',
+          amberDark: '#C77F00',
+          ink: '#1B1F29',
+          muted: '#5B6472',
+          ground: '#F3F5F8',
+          line: '#E3E7ED',
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {

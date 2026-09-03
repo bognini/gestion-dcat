@@ -3,23 +3,10 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Filter, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Filter, Loader2, SlidersHorizontal } from 'lucide-react';
+import { ProductCard, ProductSkeleton, ProductGrid, type ProduitCard } from '@/components/boutique/product-card';
 
-interface Produit {
-  id: string;
-  nom: string;
-  description: string | null;
-  prixVente: number | null;
-  prixVenteMin: number | null;
-  promoPrice: number | null;
-  promoStart: string | null;
-  promoEnd: string | null;
-  quantite: number;
-  categorie: { id: string; nom: string } | null;
-  marque: { id: string; nom: string } | null;
-  imageUrl: string | null;
-  images?: string[];
-}
+type Produit = ProduitCard;
 
 interface Categorie {
   id: string;
@@ -31,165 +18,6 @@ interface Marque {
   id: string;
   nom: string;
   _count: { produits: number };
-}
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('fr-FR', { style: 'decimal' }).format(price) + ' FCFA';
-}
-
-// Check if promo is currently active
-function isPromoActive(product: Produit): boolean {
-  const basePrice = product.prixVenteMin || product.prixVente || 0;
-  if (product.promoPrice === null || product.promoPrice <= 0 || basePrice <= 0 || product.promoPrice >= basePrice) {
-    return false;
-  }
-  const now = new Date();
-  if (product.promoStart && new Date(product.promoStart) > now) return false;
-  if (product.promoEnd && new Date(product.promoEnd) < now) return false;
-  return true;
-}
-
-function ProductCard({ product }: { product: Produit }) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  
-  const hasPromo = isPromoActive(product);
-  const basePrice = product.prixVenteMin || product.prixVente || 0;
-  const displayPrice = hasPromo ? product.promoPrice! : basePrice;
-  const originalPrice = basePrice;
-  const discount = hasPromo && originalPrice ? Math.round((1 - product.promoPrice! / originalPrice) * 100) : 0;
-  
-  // Get all available images
-  const images = product.images && product.images.length > 0 
-    ? product.images 
-    : (product.imageUrl ? [product.imageUrl] : []);
-  const hasMultipleImages = images.length > 1;
-
-  const nextImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const prevImage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  return (
-    <Link
-      href={`/boutique/produits/${product.id}`}
-      className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); setCurrentImageIndex(0); }}
-    >
-      {/* Image container */}
-      <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
-        {images.length > 0 ? (
-          <img
-            src={images[currentImageIndex]}
-            alt={product.nom}
-            className="w-full h-full object-contain p-2 transition-opacity duration-200"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
-            Pas d&apos;image
-          </div>
-        )}
-        
-        {/* Image navigation arrows */}
-        {hasMultipleImages && isHovered && (
-          <>
-            <button
-              onClick={prevImage}
-              className="absolute left-1 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-1 shadow-md transition-all z-10"
-            >
-              <ChevronLeft className="h-4 w-4 text-gray-700" />
-            </button>
-            <button
-              onClick={nextImage}
-              className="absolute right-1 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-1 shadow-md transition-all z-10"
-            >
-              <ChevronRight className="h-4 w-4 text-gray-700" />
-            </button>
-            {/* Image dots indicator */}
-            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 z-10">
-              {images.map((_, idx) => (
-                <span
-                  key={idx}
-                  className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentImageIndex ? 'bg-blue-600 w-3' : 'bg-gray-400'}`}
-                />
-              ))}
-            </div>
-          </>
-        )}
-        
-        {/* Promo badge */}
-        {hasPromo && (
-          <div className="absolute top-2 left-2">
-            <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-              -{discount}%
-            </span>
-          </div>
-        )}
-
-        {/* Out of stock overlay */}
-        {product.quantite <= 0 && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="bg-white text-gray-900 px-3 py-1 rounded text-sm font-medium">
-              Rupture de stock
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Content - use flex column for price alignment */}
-      <div className="p-3 sm:p-4 flex flex-col h-[120px] sm:h-[130px]">
-        {/* Category */}
-        {product.categorie && (
-          <p className="text-xs text-gray-500 mb-1 truncate">{product.categorie.nom}</p>
-        )}
-
-        {/* Product name - fixed height with line clamp, blue color */}
-        <h3 className="text-blue-600 text-sm sm:text-base line-clamp-2 group-hover:text-blue-700 transition-colors flex-grow">
-          {product.marque ? `${product.marque.nom} ` : ''}{product.nom}
-        </h3>
-
-        {/* Price - always at bottom, black and bold */}
-        <div className="mt-auto pt-2">
-          {hasPromo ? (
-            <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-              <span className="text-base sm:text-lg font-bold text-red-600">
-                {formatPrice(displayPrice!)}
-              </span>
-              <span className="text-xs sm:text-sm text-gray-400 line-through">
-                {formatPrice(originalPrice!)}
-              </span>
-            </div>
-          ) : (
-            <span className="text-base sm:text-lg font-bold text-gray-900">
-              {displayPrice ? formatPrice(displayPrice) : (product.prixVenteMin ? formatPrice(product.prixVenteMin) : 'Prix sur demande')}
-            </span>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function ProductSkeleton() {
-  return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden animate-pulse">
-      <div className="aspect-[4/3] bg-gray-200" />
-      <div className="p-3 sm:p-4 h-[120px] sm:h-[130px] flex flex-col">
-        <div className="h-3 bg-gray-200 rounded w-16 mb-1" />
-        <div className="h-4 bg-gray-200 rounded w-full mb-1" />
-        <div className="h-4 bg-gray-200 rounded w-3/4 flex-grow" />
-        <div className="h-5 bg-gray-200 rounded w-24 mt-auto" />
-      </div>
-    </div>
-  );
 }
 
 // Product Filters Component
@@ -222,9 +50,9 @@ function ProductFilters({
       {/* Mobile toggle button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden w-full flex items-center justify-between bg-white rounded-lg shadow-sm p-4 mb-4"
+        className="lg:hidden w-full flex items-center justify-between bg-white rounded-2xl border border-boutique-line p-4 mb-4"
       >
-        <span className="flex items-center gap-2 font-semibold text-gray-900">
+        <span className="flex items-center gap-2 font-bold text-boutique-navy">
           <Filter className="h-5 w-5" />
           Filtres
         </span>
@@ -232,17 +60,17 @@ function ProductFilters({
       </button>
 
       {/* Filters content */}
-      <div className={`bg-white rounded-lg shadow-sm p-4 sticky top-24 ${isOpen ? 'block' : 'hidden lg:block'}`}>
-        <h2 className="font-semibold mb-4 hidden lg:block text-gray-900">Filtres</h2>
+      <div className={`bg-white rounded-2xl border border-boutique-line p-5 sticky top-40 ${isOpen ? 'block' : 'hidden lg:block'}`}>
+        <h2 className="font-extrabold mb-4 hidden lg:flex items-center gap-2 text-boutique-navy"><SlidersHorizontal className="h-4 w-4" /> Filtres</h2>
 
         {/* Categories */}
         <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Catégories</h3>
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-boutique-muted mb-2">Catégories</h3>
           <ul className="space-y-1">
             <li>
               <a
                 href={buildHref({ categorie: null })}
-                className={`block py-1 text-sm ${!selectedCategorieId ? 'text-blue-600 font-medium' : 'text-gray-600 hover:text-gray-900'}`}
+                className={`block py-1.5 text-sm rounded-md ${!selectedCategorieId ? 'text-boutique-navy font-bold' : 'text-boutique-muted hover:text-boutique-navy'}`}
               >
                 Toutes les catégories
               </a>
@@ -251,7 +79,7 @@ function ProductFilters({
               <li key={cat.id}>
                 <a
                   href={buildHref({ categorie: cat.id })}
-                  className={`block py-1 text-sm ${selectedCategorieId === cat.id ? 'text-blue-600 font-medium' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`block py-1.5 text-sm rounded-md ${selectedCategorieId === cat.id ? 'text-boutique-navy font-bold' : 'text-boutique-muted hover:text-boutique-navy'}`}
                 >
                   {cat.nom} ({cat._count.produits})
                 </a>
@@ -263,13 +91,13 @@ function ProductFilters({
         {/* Marques */}
         {marques.length > 0 && (
           <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Marques</h3>
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-boutique-muted mb-2">Marques</h3>
             <ul className="space-y-1">
               {marques.map((marque) => (
                 <li key={marque.id}>
                   <a
                     href={buildHref({ marque: marque.id })}
-                    className={`block py-1 text-sm ${selectedMarqueId === marque.id ? 'text-blue-600 font-medium' : 'text-gray-600 hover:text-gray-900'}`}
+                    className={`block py-1.5 text-sm rounded-md ${selectedMarqueId === marque.id ? 'text-boutique-navy font-bold' : 'text-boutique-muted hover:text-boutique-navy'}`}
                   >
                     {marque.nom} ({marque._count.produits})
                   </a>
@@ -295,7 +123,7 @@ function ProduitsPageLoading() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-boutique-navy" />
       </div>
     </div>
   );
@@ -343,7 +171,7 @@ function ProduitsPageContent() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-boutique-navy tracking-tight mb-6">
         {featured ? 'Promotions' : (search ? `Résultats pour "${search}"` : 'Tous les produits')}
       </h1>
 
@@ -360,28 +188,28 @@ function ProduitsPageContent() {
         <div className="flex-1">
           {loading ? (
             <>
-              <p className="text-sm text-gray-600 mb-4">Chargement...</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              <p className="text-sm text-boutique-muted mb-4">Chargement...</p>
+              <ProductGrid>
                 {Array(8).fill(0).map((_, i) => (
                   <ProductSkeleton key={i} />
                 ))}
-              </div>
+              </ProductGrid>
             </>
           ) : products.length > 0 ? (
             <>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-boutique-muted mb-4">
                 {products.length} produit{products.length > 1 ? 's' : ''} trouvé{products.length > 1 ? 's' : ''}
               </p>
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              <ProductGrid>
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
-              </div>
+              </ProductGrid>
             </>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">Aucun produit trouvé</p>
-              <a href={featured ? '/boutique/produits?featured=true' : '/boutique/produits'} className="text-blue-600 hover:underline mt-2 inline-block">
+              <p className="text-boutique-muted text-lg">Aucun produit trouvé</p>
+              <a href={featured ? '/boutique/produits?featured=true' : '/boutique/produits'} className="text-boutique-navy font-semibold hover:underline mt-2 inline-block">
                 Voir tous les produits
               </a>
             </div>

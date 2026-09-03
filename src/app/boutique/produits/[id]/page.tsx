@@ -106,12 +106,12 @@ export default function ProduitDetailPage() {
       <div className="container mx-auto px-4 py-16 text-center">
         <h1 className="text-2xl font-bold mb-4">Produit non trouvé</h1>
         <p className="text-gray-500 mb-8">Ce produit n&apos;existe pas ou n&apos;est plus disponible.</p>
-        <a
+        <Link
           href="/boutique/produits"
-          className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+          className="inline-block bg-boutique-navy text-white px-6 py-2 rounded-xl font-semibold hover:bg-boutique-navy2"
         >
           Voir tous les produits
-        </a>
+        </Link>
       </div>
     );
   }
@@ -141,13 +141,13 @@ export default function ProduitDetailPage() {
     <div className="container mx-auto px-4 py-4">
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-1 text-xs text-gray-500 mb-4 overflow-x-auto whitespace-nowrap">
-        <Link href="/boutique" className="hover:text-gray-700">Accueil</Link>
+        <Link href="/boutique" className="hover:text-boutique-navy">Accueil</Link>
         <ChevronRight className="h-3 w-3 flex-shrink-0" />
-        <Link href="/boutique/produits" className="hover:text-gray-700">Produits</Link>
+        <Link href="/boutique/produits" className="hover:text-boutique-navy">Produits</Link>
         {product.categorie && (
           <>
             <ChevronRight className="h-3 w-3 flex-shrink-0" />
-            <Link href={`/boutique/produits?categorie=${product.categorie.id}`} className="hover:text-gray-700">
+            <Link href={`/boutique/produits?categorie=${product.categorie.id}`} className="hover:text-boutique-navy">
               {product.categorie.nom}
             </Link>
           </>
@@ -197,11 +197,11 @@ export default function ProduitDetailPage() {
         {/* Product info */}
         <div>
           {/* Line 1: Product name only (from 'Nom du produit' field) in blue */}
-          <h1 className="text-xl md:text-2xl text-blue-600 mb-1">{product.nom}</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-boutique-navy tracking-tight mb-1">{product.nom}</h1>
 
           {/* Line 2: Marque & Modèle - smaller font, not bold */}
           {(product.marque || product.modele) && (
-            <p className="text-sm text-gray-500 mb-3">
+            <p className="text-sm text-boutique-muted mb-3">
               {product.marque && <span>Marque: {product.marque.nom}</span>}
               {product.marque && product.modele && <span> | </span>}
               {product.modele && <span>Modèle: {product.modele.nom}</span>}
@@ -213,13 +213,13 @@ export default function ProduitDetailPage() {
             {hasPromo ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-3xl font-bold text-red-600">
+                  <span className="text-3xl font-extrabold text-boutique-amberDark tabular-nums">
                     {formatPrice(displayPrice!)}
                   </span>
                   <span className="text-lg text-gray-400 line-through">
                     {formatPrice(originalPrice!)}
                   </span>
-                  <span className="bg-red-500 text-white text-sm font-bold px-2 py-1 rounded">
+                  <span className="bg-boutique-amber text-boutique-navy text-sm font-extrabold px-2 py-1 rounded-md">
                     -{discount}%
                   </span>
                 </div>
@@ -228,7 +228,7 @@ export default function ProduitDetailPage() {
                 </p>
               </div>
             ) : (
-              <span className="text-3xl font-bold text-gray-900">
+              <span className="text-3xl font-extrabold text-boutique-navy tabular-nums">
                 {displayPrice ? formatPrice(displayPrice) : (product.prixVenteMin ? formatPrice(product.prixVenteMin) : 'Prix sur demande')}
               </span>
             )}
@@ -252,7 +252,7 @@ export default function ProduitDetailPage() {
           {/* CTA buttons */}
           {product.quantite > 0 && (
             <div className="flex flex-col sm:flex-row gap-2 mb-4">
-              <div className="flex items-center border border-gray-300 rounded-lg bg-white">
+              <div className="flex items-center border border-boutique-line rounded-xl bg-white">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   disabled={quantity <= 1}
@@ -272,10 +272,10 @@ export default function ProduitDetailPage() {
               <button
                 onClick={handleAddToCart}
                 disabled={product.quantite <= 0}
-                className={`py-2.5 px-4 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
+                className={`py-2.5 px-5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 ${
                   added 
                     ? 'bg-green-500 text-white' 
-                    : 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed'
+                    : 'bg-boutique-navy text-white hover:bg-boutique-amber hover:text-boutique-navy disabled:bg-gray-300 disabled:cursor-not-allowed'
                 }`}
               >
                 <ShoppingCart className="h-4 w-4" />
@@ -285,7 +285,7 @@ export default function ProduitDetailPage() {
                 href={`https://wa.me/${whatsappNumber}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="py-2.5 px-4 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 bg-green-500 text-white hover:bg-green-600"
+                className="py-2.5 px-5 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 bg-green-500 text-white hover:bg-green-600"
               >
                 <MessageCircle className="h-4 w-4" />
                 WhatsApp
