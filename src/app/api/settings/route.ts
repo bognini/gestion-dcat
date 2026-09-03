@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 
 // GET /api/settings - Get all settings or filter by category
 export async function GET(request: NextRequest) {
@@ -52,6 +53,9 @@ export async function PUT(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
+
+    const denied = requirePermission(session, 'parametres', 'write');
+    if (denied) return denied;
 
     const data = await request.json();
     

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +71,9 @@ export async function PUT(
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, ['stock', 'marketing'], 'write');
+    if (denied) return denied;
 
     const { id } = await params;
     const data = await request.json();
@@ -153,6 +157,9 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, ['stock', 'marketing'], 'delete');
+    if (denied) return denied;
 
     const { id } = await params;
 

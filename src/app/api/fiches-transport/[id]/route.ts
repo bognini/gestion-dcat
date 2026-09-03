@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 
 export async function GET(
   request: NextRequest,
@@ -59,6 +60,9 @@ export async function PUT(
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, 'administration', 'write');
+    if (denied) return denied;
 
     const { id } = await params;
     const data = await request.json();
@@ -142,6 +146,9 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, 'administration', 'delete');
+    if (denied) return denied;
 
     const { id } = await params;
 

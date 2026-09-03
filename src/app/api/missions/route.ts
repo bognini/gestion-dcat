@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
+import { nextReference, pad } from '@/lib/sequence';
 
-function generateReference(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const random = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
-  return `FM-${year}-${random}`;
+async function generateReference(): Promise<string> {
+  const year = new Date().getFullYear();
+  return nextReference(
+    `fiche-mission:${year}`,
+    (n) => `FM-${year}-${pad(n)}`,
+    async (ref) => !!(await prisma.ficheMission.findUnique({ where: { reference: ref }, select: { id: true } }))
+  );
 }
 
 export async function GET(request: NextRequest) {
@@ -62,6 +66,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
+    const denied = requirePermission(user, ['administration', 'technique'], 'write');
+    if (denied) return denied;
+
     const data = await request.json();
 
     if (!data.titre?.trim()) {
@@ -74,10 +81,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Date de départ requise' }, { status: 400 });
     }
 
-    let reference = generateReference();
+    let reference = await generateReference();
     let exists = await prisma.ficheMission.findUnique({ where: { reference } });
     while (exists) {
-      reference = generateReference();
+      reference = await generateReference();
       exists = await prisma.ficheMission.findUnique({ where: { reference } });
     }
 

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { nextReference, pad } from '@/lib/sequence';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 
 export async function POST(
   request: NextRequest,
@@ -11,6 +13,9 @@ export async function POST(
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, 'finance', 'write');
+    if (denied) return denied;
 
     const { id: devisId } = await params;
 
@@ -43,23 +48,11 @@ export async function POST(
 
     // Generate facture reference
     const year = new Date().getFullYear();
-    const lastFacture = await prisma.facture.findFirst({
-      where: {
-        reference: {
-          startsWith: `FAC-${year}`,
-        },
-      },
-      orderBy: { reference: 'desc' },
-    });
-
-    let nextNumber = 1;
-    if (lastFacture) {
-      const match = lastFacture.reference.match(/FAC-\d{4}-(\d+)/);
-      if (match) {
-        nextNumber = parseInt(match[1]) + 1;
-      }
-    }
-    const reference = `FAC-${year}-${String(nextNumber).padStart(4, '0')}`;
+    const reference = await nextReference(
+      `facture:${year}`,
+      (n) => `FAC-${year}-${pad(n)}`,
+      async (ref) => !!(await prisma.facture.findUnique({ where: { reference: ref }, select: { id: true } }))
+    );
 
     // Create the facture
     const facture = await prisma.facture.create({

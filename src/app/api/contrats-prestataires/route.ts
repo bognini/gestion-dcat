@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { nextReference, pad } from '@/lib/sequence';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 
-function generateNumero(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const random = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
-  return `CPS-${year}-${random}`;
+async function generateNumero(): Promise<string> {
+  const year = new Date().getFullYear();
+  return nextReference(
+    `contrat-prestataire:${year}`,
+    (n) => `CPS-${year}-${pad(n)}`,
+    async (ref) => !!(await prisma.contratPrestataire.findUnique({ where: { numero: ref }, select: { id: true } }))
+  );
 }
 
 export async function GET(request: NextRequest) {
@@ -48,6 +52,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
+    const denied = requirePermission(user, 'administration', 'write');
+    if (denied) return denied;
+
     const data = await request.json();
 
     if (!data.partenaireId) {
@@ -64,10 +71,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate unique numero
-    let numero = generateNumero();
+    let numero = await generateNumero();
     let exists = await prisma.contratPrestataire.findUnique({ where: { numero } });
     while (exists) {
-      numero = generateNumero();
+      numero = await generateNumero();
       exists = await prisma.contratPrestataire.findUnique({ where: { numero } });
     }
 

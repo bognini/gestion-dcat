@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 import { validateImageUpload } from '@/lib/upload-security';
 
 export async function POST(
@@ -12,6 +13,9 @@ export async function POST(
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, 'technique', 'write');
+    if (denied) return denied;
 
     const { id: projetId, folderId } = await params;
     const formData = await request.formData();

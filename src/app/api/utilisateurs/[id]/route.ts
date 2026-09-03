@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 export async function GET(
   request: NextRequest,
@@ -52,6 +54,9 @@ export async function PUT(
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, 'parametres', 'write');
+    if (denied) return denied;
 
     // Only admins can update users (except self-updates for password)
     const { id } = await params;
@@ -111,7 +116,7 @@ export async function PUT(
 
     // Reset password flag (admin only)
     if (user.role === 'admin' && data.resetPassword) {
-      const tempPassword = Math.random().toString(36).slice(-8);
+      const tempPassword = crypto.randomBytes(9).toString('base64url').slice(0, 12);
       updateData.password = await bcrypt.hash(tempPassword, 10);
       updateData.mustChangePassword = true;
       // Return temp password to admin
@@ -161,6 +166,9 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, 'parametres', 'delete');
+    if (denied) return denied;
 
     // Only admins can delete users
     if (user.role !== 'admin') {

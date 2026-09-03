@@ -6,6 +6,7 @@ export type Module =
   | 'stock'
   | 'technique'
   | 'marketing'
+  | 'finance'
   | 'parametres';
 
 export type Action = 'read' | 'write' | 'delete' | 'manage';
@@ -18,6 +19,7 @@ const PERMISSIONS: Record<Role, Record<Module, Action[]>> = {
     stock: ['read', 'write', 'delete', 'manage'],
     technique: ['read', 'write', 'delete', 'manage'],
     marketing: ['read', 'write', 'delete', 'manage'],
+    finance: ['read', 'write', 'delete', 'manage'],
     parametres: ['read', 'write', 'delete', 'manage'],
   },
   [ROLES.TECHNICIEN]: {
@@ -26,6 +28,7 @@ const PERMISSIONS: Record<Role, Record<Module, Action[]>> = {
     stock: ['read', 'write'],
     technique: ['read', 'write'],
     marketing: [],
+    finance: [],
     parametres: [],
   },
   [ROLES.MARKETING]: {
@@ -34,6 +37,7 @@ const PERMISSIONS: Record<Role, Record<Module, Action[]>> = {
     stock: ['read'],
     technique: ['read'],
     marketing: ['read', 'write', 'delete', 'manage'],
+    finance: [],
     parametres: [],
   },
   [ROLES.COMPTABLE]: {
@@ -42,6 +46,7 @@ const PERMISSIONS: Record<Role, Record<Module, Action[]>> = {
     stock: [],
     technique: [],
     marketing: [],
+    finance: ['read', 'write'], // Factures, devis, paiements, dépenses, caisse
     parametres: [],
   },
   [ROLES.ASSISTANTE]: {
@@ -50,6 +55,7 @@ const PERMISSIONS: Record<Role, Record<Module, Action[]>> = {
     stock: ['read', 'write'], // Mouvements de stock
     technique: [],
     marketing: [],
+    finance: [],
     parametres: [],
   },
 };
@@ -148,6 +154,7 @@ export const SECTIONS: SectionConfig[] = [
     color: 'section-card-technique',
     subsections: [
       { id: 'projets', title: 'Gestion des Projets', href: '/technique/projets', color: 'subsection-blue' },
+      { id: 'tickets', title: "Tickets d'incident", href: '/technique/tickets', color: 'subsection-rose' },
       { id: 'interventions', title: 'Gestion des Interventions', href: '/technique/interventions', color: 'subsection-teal' },
     ],
   },

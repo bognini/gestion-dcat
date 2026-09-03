@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { nextReference, pad } from '@/lib/sequence';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
-function generateReference() {
+async function generateReference(): Promise<string> {
   const date = new Date();
   const year = date.getFullYear().toString().slice(-2);
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-  return `EM${year}${month}-${random}`;
+  return nextReference(
+    `em:${year}${month}`,
+    (n) => `EM${year}${month}-${pad(n)}`,
+    async (ref) => !!(await prisma.commande.findUnique({ where: { reference: ref }, select: { id: true } }))
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -68,7 +72,7 @@ export async function POST(request: NextRequest) {
     const lignesData = [];
 
     // Fetch products to verify prices and stock
-    const productIds = lignes.map((l: any) => l.produitId);
+    const productIds = lignes.map((l: { produitId: string }) => l.produitId);
     const products = await prisma.produit.findMany({
       where: { id: { in: productIds } },
       select: {
@@ -142,7 +146,7 @@ export async function POST(request: NextRequest) {
     // Create order
     const commande = await prisma.commande.create({
       data: {
-        reference: generateReference(),
+        reference: await generateReference(),
         clientId: clientRecord.id,
         date: new Date(),
         statut: 'en_attente',

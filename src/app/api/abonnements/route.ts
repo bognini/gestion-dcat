@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,6 +43,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
+    const denied = requirePermission(user, 'finance', 'write');
+    if (denied) return denied;
+
     const data = await request.json();
 
     if (!data.nom?.trim()) {
@@ -62,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate next payment date based on periodicity
     const dateDebut = new Date(data.dateDebut);
-    let dateProchainePaiement = new Date(dateDebut);
+    const dateProchainePaiement = new Date(dateDebut);
     
     if (data.periodicite === 'annuel') {
       dateProchainePaiement.setFullYear(dateProchainePaiement.getFullYear() + 1);

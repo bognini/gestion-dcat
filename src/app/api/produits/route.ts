@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { nextReference, pad } from '@/lib/sequence';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +79,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
+    const denied = requirePermission(user, ['stock', 'marketing'], 'write');
+    if (denied) return denied;
+
     const data = await request.json();
 
     if (!data.nom?.trim()) {
@@ -87,8 +92,11 @@ export async function POST(request: NextRequest) {
     let sku = data.sku?.trim();
     if (!sku) {
       const prefix = data.categorieId ? 'PRD' : 'GEN';
-      const count = await prisma.produit.count();
-      sku = `${prefix}-${String(count + 1).padStart(5, '0')}`;
+      sku = await nextReference(
+        `sku:${prefix}`,
+        (n) => `${prefix}-${pad(n, 5)}`,
+        async (candidate) => !!(await prisma.produit.findFirst({ where: { sku: candidate }, select: { id: true } }))
+      );
     }
 
     // Check if SKU already exists

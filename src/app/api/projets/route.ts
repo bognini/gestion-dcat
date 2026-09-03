@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { nextReference, pad } from '@/lib/sequence';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,6 +48,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
+    const denied = requirePermission(user, 'technique', 'write');
+    if (denied) return denied;
+
     const data = await request.json();
 
     // Validate required fields
@@ -63,8 +68,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate reference
-    const count = await prisma.projet.count();
-    const reference = `PRJ-${String(count + 1).padStart(4, '0')}`;
+    const reference = await nextReference(
+      'projet',
+      (n) => `PRJ-${pad(n)}`,
+      async (ref) => !!(await prisma.projet.findUnique({ where: { reference: ref }, select: { id: true } }))
+    );
 
     const projet = await prisma.projet.create({
       data: {

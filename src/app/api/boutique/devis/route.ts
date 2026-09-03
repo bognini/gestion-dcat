@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { nextReference, pad } from '@/lib/sequence';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
-function generateReference() {
+async function generateReference(): Promise<string> {
   const date = new Date();
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const day = date.getDate().toString().padStart(2, '0');
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-  return `WEB-${year}${month}${day}-${random}`;
+  return nextReference(
+    `devis-web:${year}${month}${day}`,
+    (n) => `WEB-${year}${month}${day}-${pad(n)}`,
+    async (ref) => !!(await prisma.devis.findUnique({ where: { reference: ref }, select: { id: true } }))
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -64,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare content
-    const reference = generateReference();
+    const reference = await generateReference();
     const clientName = entreprise || nom;
     const contactInfo = [
       entreprise ? `Contact: ${nom}` : null,
@@ -74,7 +78,7 @@ export async function POST(request: NextRequest) {
     ].filter(Boolean).join(' | ');
 
     // Create lines for requested products
-    const devisLignes = lignes.map((l: any, index: number) => ({
+    const devisLignes = lignes.map((l: { description: string; quantite?: number }, index: number) => ({
       ordre: index + 1,
       reference: 'WEB-REQ',
       designation: l.description,

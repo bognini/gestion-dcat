@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { nextReference, pad } from '@/lib/sequence';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 
 export async function POST(
   request: NextRequest,
@@ -11,6 +13,9 @@ export async function POST(
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, 'finance', 'write');
+    if (denied) return denied;
 
     const { id } = await params;
     const data = await request.json();
@@ -35,15 +40,11 @@ export async function POST(
 
     // Generate reference: PAY-YYYY-XXXX
     const year = new Date().getFullYear();
-    const count = await prisma.paiement.count({
-      where: {
-        date: {
-          gte: new Date(year, 0, 1),
-          lt: new Date(year + 1, 0, 1),
-        },
-      },
-    });
-    const reference = `PAY-${year}-${String(count + 1).padStart(4, '0')}`;
+    const reference = await nextReference(
+      `paiement:${year}`,
+      (n) => `PAY-${year}-${pad(n)}`,
+      async (ref) => !!(await prisma.paiement.findUnique({ where: { reference: ref }, select: { id: true } }))
+    );
 
     // Create payment
     const paiement = await prisma.paiement.create({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 import { sendNotificationEmail } from '@/lib/mail';
 import bcrypt from 'bcryptjs';
 
@@ -53,6 +54,9 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, 'parametres', 'write');
+    if (denied) return denied;
 
     // Only admins can create users
     if (user.role !== 'admin') {

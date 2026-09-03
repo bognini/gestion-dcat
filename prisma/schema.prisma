@@ -13,6 +13,9 @@ datasource db {
 // ==========================================
 
 model Utilisateur {
+  ticketsRecus        Ticket[] @relation("TicketRecuPar")
+  ticketsPrisEnCharge Ticket[] @relation("TicketPriseEnCharge")
+  ticketsCrees        Ticket[] @relation("TicketCreatedBy")
   id                String    @id @default(uuid())
   username          String    @unique
   email             String    @unique
@@ -677,6 +680,7 @@ model MouvementStock {
 // ==========================================
 
 model Partenaire {
+  tickets       Ticket[]
   id            String         @id @default(uuid())
   nom           String         @unique
   type          String?        // client, fournisseur, partenaire, prestataire
@@ -891,6 +895,8 @@ model Livrable {
 // ==========================================
 
 model Intervention {
+  ticketId              String?
+  ticket                Ticket?    @relation(fields: [ticketId], references: [id])
   id                    String    @id @default(uuid())
   reference             String?   @unique
   date                  DateTime
@@ -921,6 +927,37 @@ model Intervention {
   @@index([partenaireId])
   @@index([date])
   @@index([statut])
+  @@index([ticketId])
+}
+
+// Ticket d'incident : point d'entrée de toute nouvelle intervention
+model Ticket {
+  id                 String       @id @default(uuid())
+  numero             String       @unique // TCK-YYYY-XXXX
+  partenaireId       String
+  partenaire         Partenaire   @relation(fields: [partenaireId], references: [id])
+  incident           String
+  dateSignalement    DateTime
+  signaleParNom      String
+  signaleParPrenoms  String?
+  recuParId          String       // Personnel DCAT ayant reçu le signalement
+  recuPar            Utilisateur  @relation("TicketRecuPar", fields: [recuParId], references: [id])
+  modeSignalement    String       // appel_telephonique, hotline_dcat, mail, constat
+  priseEnChargeParId String?
+  priseEnChargePar   Utilisateur? @relation("TicketPriseEnCharge", fields: [priseEnChargeParId], references: [id])
+  statut             String       @default("ouvert") // ouvert, en_cours, ferme
+  mailSupportEnvoye  Boolean      @default(false)
+  mailSupportAt      DateTime?
+  fermeAt            DateTime?
+  createdById        String
+  createdBy          Utilisateur  @relation("TicketCreatedBy", fields: [createdById], references: [id])
+  interventions      Intervention[]
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([partenaireId])
+  @@index([statut])
+  @@index([dateSignalement])
 }
 
 model InterventionIntervenant {
@@ -970,6 +1007,14 @@ model NotificationEmailList {
   emails   String[]
   updatedAt DateTime @updatedAt
 }
+
+// Compteurs atomiques pour la numérotation des documents (références, tickets, SKU...)
+model Sequence {
+  key       String   @id
+  value     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
 
 model AppConfig {
   id          String   @id @default(uuid())

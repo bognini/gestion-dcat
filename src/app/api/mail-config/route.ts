@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 
 function normalizeEmails(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
@@ -47,6 +48,9 @@ export async function PUT(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, 'parametres', 'write');
+    if (denied) return denied;
 
     if (user.role !== 'admin') {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
