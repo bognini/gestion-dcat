@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
 import { sendNotificationEmail } from '@/lib/mail';
+
+import { parseDateMouvement } from '@/lib/stock';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,11 +15,23 @@ export async function GET(request: NextRequest) {
 
     const produitId = request.nextUrl.searchParams.get('produitId');
     const type = request.nextUrl.searchParams.get('type');
-    const limit = parseInt(request.nextUrl.searchParams.get('limit') || '50');
+    const from = request.nextUrl.searchParams.get('from');
+    const to = request.nextUrl.searchParams.get('to');
+    const limit = Math.min(parseInt(request.nextUrl.searchParams.get('limit') || '50'), 2000);
 
     const where: Record<string, unknown> = {};
     if (produitId) where.produitId = produitId;
     if (type) where.type = type;
+    if (from || to) {
+      const range: Record<string, Date> = {};
+      if (from) range.gte = new Date(from);
+      if (to) {
+        const end = new Date(to);
+        end.setHours(23, 59, 59, 999);
+        range.lte = end;
+      }
+      where.date = range;
+    }
 
     const mouvements = await prisma.mouvementStock.findMany({
       where,
@@ -54,6 +69,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
+    const denied = requirePermission(user, 'stock', 'write');
+    if (denied) return denied;
+
     const data = await request.json();
 
     if (!data.produitId) {
@@ -67,6 +85,10 @@ export async function POST(request: NextRequest) {
     if (!data.quantite || data.quantite <= 0) {
       return NextResponse.json({ error: 'La quantité doit être positive' }, { status: 400 });
     }
+
+    // Date du mouvement : saisie (défaut aujourd'hui), jamais dans le futur, pas au-delà de 5 ans en arrière
+    const dateMouvement = parseDateMouvement(data.date);
+    if (dateMouvement instanceof NextResponse) return dateMouvement;
 
     // Get current product
     const produit = await prisma.produit.findUnique({
@@ -94,6 +116,7 @@ export async function POST(request: NextRequest) {
       prisma.mouvementStock.create({
         data: {
           type: data.type,
+          date: dateMouvement,
           quantite: data.quantite,
           produitId: data.produitId,
           utilisateurId: user.id,

@@ -48,6 +48,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { formatDate, formatCurrency } from '@/lib/utils';
+import { periodeBounds, toISODate } from '@/lib/stock';
 
 interface Mouvement {
   id: string;
@@ -80,11 +81,20 @@ export default function MouvementsPage() {
 
   useEffect(() => {
     fetchMouvements();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterPeriod]);
 
   const fetchMouvements = async () => {
+    setLoading(true);
     try {
-      const res = await fetch('/api/mouvements?limit=100');
+      // La période est appliquée côté serveur sur la date du mouvement
+      const params = new URLSearchParams({ limit: filterPeriod === 'all' ? '500' : '2000' });
+      if (filterPeriod !== 'all') {
+        const { from, to } = periodeBounds(filterPeriod);
+        params.set('from', toISODate(from));
+        params.set('to', toISODate(to));
+      }
+      const res = await fetch(`/api/mouvements?${params.toString()}`);
       if (res.ok) {
         setMouvements(await res.json());
       }
@@ -127,27 +137,7 @@ export default function MouvementsPage() {
                           m.produit.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           m.commentaire?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === 'all' || m.type === filterType;
-    
-    // Period filter
-    let matchesPeriod = true;
-    if (filterPeriod !== 'all') {
-      const mouvementDate = new Date(m.date);
-      const now = new Date();
-      
-      if (filterPeriod === 'today') {
-        matchesPeriod = mouvementDate.toDateString() === now.toDateString();
-      } else if (filterPeriod === 'week') {
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        matchesPeriod = mouvementDate >= weekAgo;
-      } else if (filterPeriod === 'month') {
-        matchesPeriod = mouvementDate.getMonth() === now.getMonth() && 
-                        mouvementDate.getFullYear() === now.getFullYear();
-      } else if (filterPeriod === 'year') {
-        matchesPeriod = mouvementDate.getFullYear() === now.getFullYear();
-      }
-    }
-    
-    return matchesSearch && matchesType && matchesPeriod;
+    return matchesSearch && matchesType;
   });
 
   const totals = {
@@ -234,8 +224,8 @@ export default function MouvementsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Toutes périodes</SelectItem>
-                  <SelectItem value="today">Aujourd'hui</SelectItem>
-                  <SelectItem value="week">Cette semaine</SelectItem>
+                  <SelectItem value="today">Aujourd&apos;hui</SelectItem>
+                  <SelectItem value="week">7 derniers jours</SelectItem>
                   <SelectItem value="month">Ce mois</SelectItem>
                   <SelectItem value="year">Cette année</SelectItem>
                 </SelectContent>

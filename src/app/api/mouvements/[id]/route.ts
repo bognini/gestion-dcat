@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
+import { requirePermission } from '@/lib/api-auth';
+import { parseDateMouvement } from '@/lib/stock';
 
 export async function DELETE(
   _request: NextRequest,
@@ -11,6 +13,9 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
+
+    const denied = requirePermission(user, 'stock', 'delete');
+    if (denied) return denied;
 
     if (user.role !== 'admin') {
       return NextResponse.json(
@@ -64,5 +69,48 @@ export async function DELETE(
   } catch (error) {
     console.error('Error deleting mouvement:', error);
     return NextResponse.json({ error: 'Erreur lors de la suppression' }, { status: 500 });
+  }
+}
+
+/**
+ * PUT /api/mouvements/[id] — correction (admin) de la date et du commentaire d'un mouvement.
+ * Les quantités ne sont pas modifiables : supprimer puis ressaisir le mouvement.
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await getSessionFromCookie();
+    if (!user) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+    const denied = requirePermission(user, 'stock', 'manage');
+    if (denied) return denied;
+
+    const { id } = await params;
+    const data = await request.json();
+    const existing = await prisma.mouvementStock.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Mouvement non trouvé' }, { status: 404 });
+    }
+
+    const updateData: { date?: Date; commentaire?: string | null } = {};
+    if (data.date !== undefined) {
+      const d = parseDateMouvement(data.date);
+      if (d instanceof NextResponse) return d;
+      updateData.date = d;
+    }
+    if (data.commentaire !== undefined) updateData.commentaire = data.commentaire?.trim() || null;
+
+    const mouvement = await prisma.mouvementStock.update({
+      where: { id },
+      data: updateData,
+      select: { id: true, date: true, commentaire: true },
+    });
+    return NextResponse.json(mouvement);
+  } catch (error) {
+    console.error('Error updating mouvement:', error);
+    return NextResponse.json({ error: 'Erreur lors de la mise à jour' }, { status: 500 });
   }
 }

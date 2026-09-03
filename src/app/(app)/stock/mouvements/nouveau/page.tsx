@@ -74,6 +74,7 @@ function NouveauMouvementContent() {
   
   const [formData, setFormData] = useState({
     type: 'ENTREE',
+    date: new Date().toISOString().split('T')[0],
     produitId: searchParams.get('produit') || '',
     quantite: 1,
     // Entry fields
@@ -174,6 +175,7 @@ function NouveauMouvementContent() {
 
       const requestBody = {
         type: formData.type,
+        date: formData.date,
         produitId: formData.produitId,
         quantite: formData.quantite,
         serialNumbers,
@@ -310,6 +312,21 @@ function NouveauMouvementContent() {
             <CardTitle>Détails du mouvement</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="date">Date du mouvement *</Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                max={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Date à laquelle l&apos;{formData.type === 'ENTREE' ? 'entrée' : 'sortie'} a réellement eu lieu (aujourd&apos;hui par défaut).
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="produitId">Produit *</Label>
               <Select 
