@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { prisma } from './prisma';
+import { decryptSecret, encryptSecret, hasEncryptionKey, isEncrypted } from './secret-box';
 
 interface MailConfig {
   host: string;
@@ -53,10 +54,30 @@ export async function sendNotificationEmail(
   return { sent: ok ? total : 0, total };
 }
 
+// Déchiffre le mot de passe SMTP stocké. Un mot de passe historique en clair est
+// rechiffré au passage dès que SECRETS_ENCRYPTION_KEY est configurée.
+export async function readStoredSmtpPassword(config: { id: string; smtpPass: string | null }): Promise<string | null> {
+  if (!config.smtpPass) return null;
+
+  if (!isEncrypted(config.smtpPass) && hasEncryptionKey()) {
+    try {
+      await prisma.mailConfig.update({
+        where: { id: config.id },
+        data: { smtpPass: encryptSecret(config.smtpPass) },
+      });
+    } catch (error) {
+      console.error('Error encrypting legacy SMTP password:', error);
+    }
+  }
+
+  return decryptSecret(config.smtpPass);
+}
+
 async function getMailConfig(): Promise<MailConfig | null> {
   const config = await prisma.mailConfig.findFirst();
-  
-  if (!config?.smtpHost || !config?.smtpUser || !config?.smtpPass) {
+  const smtpPass = config ? await readStoredSmtpPassword(config) : null;
+
+  if (!config?.smtpHost || !config?.smtpUser || !smtpPass) {
     // Fallback to environment variables
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
       return {
@@ -76,7 +97,7 @@ async function getMailConfig(): Promise<MailConfig | null> {
     host: config.smtpHost,
     port: config.smtpPort || 587,
     user: config.smtpUser,
-    pass: config.smtpPass,
+    pass: smtpPass,
     from: config.smtpFrom || 'noreply@dcat.ci',
     fromName: config.smtpFromName || 'Gestion DCAT',
     secure: config.smtpSecure,

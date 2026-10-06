@@ -992,7 +992,7 @@ model MailConfig {
   smtpHost           String?
   smtpPort           Int?
   smtpUser           String?
-  smtpPass           String?  // Should be encrypted
+  smtpPass           String?  // Chiffré AES-256-GCM (enc:v1:…), voir src/lib/secret-box.ts
   smtpFrom           String?
   smtpFromName       String?
   smtpSecure         Boolean  @default(true)

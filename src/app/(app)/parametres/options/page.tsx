@@ -85,7 +85,13 @@ export default function OptionsPage() {
     const savedNotifications = localStorage.getItem('dcat_notification_settings');
     const savedGeneral = localStorage.getItem('dcat_general_settings');
     
-    if (savedEmail) setEmailSettings(JSON.parse(savedEmail));
+    if (savedEmail) {
+      // Le mot de passe SMTP ne doit jamais rester dans le navigateur (purge des anciennes versions)
+      const rest = JSON.parse(savedEmail);
+      delete rest.smtpPassword;
+      localStorage.setItem('dcat_email_settings', JSON.stringify(rest));
+      setEmailSettings((prev) => ({ ...prev, ...rest, smtpPassword: '' }));
+    }
     if (savedNotifications) setNotifications(JSON.parse(savedNotifications));
     if (savedGeneral) setGeneralSettings(JSON.parse(savedGeneral));
 
@@ -167,7 +173,8 @@ export default function OptionsPage() {
 
   const handleSaveEmail = async () => {
     setSaving(true);
-    localStorage.setItem('dcat_email_settings', JSON.stringify(emailSettings));
+    // smtpPassword: undefined est omis par JSON.stringify
+    localStorage.setItem('dcat_email_settings', JSON.stringify({ ...emailSettings, smtpPassword: undefined }));
     try {
       const res = await fetch('/api/mail-config', {
         method: 'PUT',
@@ -190,7 +197,8 @@ export default function OptionsPage() {
         });
         setEmailSettings((prev) => ({ ...prev, smtpPassword: '' }));
       } else {
-        toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible d\'enregistrer la configuration email' });
+        const body = await res.json().catch(() => null);
+        toast({ variant: 'destructive', title: 'Erreur', description: body?.error || 'Impossible d\'enregistrer la configuration email' });
       }
     } catch {
       toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible d\'enregistrer la configuration email' });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
 import { requirePermission } from '@/lib/api-auth';
+import { readStoredSmtpPassword } from '@/lib/mail';
 import nodemailer from 'nodemailer';
 
 export async function POST(request: NextRequest) {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
     const smtpHost = data.smtpHost || existingConfig?.smtpHost;
     const smtpPort = parseInt(data.smtpPort) || existingConfig?.smtpPort || 587;
     const smtpUser = data.smtpUser || existingConfig?.smtpUser;
-    const smtpPass = data.smtpPassword || existingConfig?.smtpPass;
+    const smtpPass = data.smtpPassword || (existingConfig ? await readStoredSmtpPassword(existingConfig) : null);
     const smtpSecure = data.smtpSecure ?? existingConfig?.smtpSecure ?? false;
     const senderEmail = data.senderEmail || existingConfig?.smtpFrom || 'noreply@dcat.ci';
     const senderName = data.senderName || existingConfig?.smtpFromName || 'Gestion DCAT';

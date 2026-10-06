@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromCookie } from '@/lib/auth';
 import { requirePermission } from '@/lib/api-auth';
+import { encryptSecret, hasEncryptionKey } from '@/lib/secret-box';
 
 function normalizeEmails(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
@@ -76,13 +77,21 @@ export async function PUT(request: NextRequest) {
     const nextPassword = typeof data.smtpPass === 'string' ? data.smtpPass : undefined;
     const shouldUpdatePassword = typeof nextPassword === 'string' && nextPassword.trim().length > 0;
 
+    if (shouldUpdatePassword && !hasEncryptionKey()) {
+      return NextResponse.json(
+        { error: 'Chiffrement non configuré sur le serveur (SECRETS_ENCRYPTION_KEY). Le mot de passe SMTP ne peut pas être enregistré.' },
+        { status: 500 }
+      );
+    }
+    const encryptedPassword = shouldUpdatePassword ? encryptSecret(nextPassword.trim()) : null;
+
     const notificationEmails = data.notificationEmails !== undefined ? normalizeEmails(data.notificationEmails) : undefined;
 
     const dataToWrite = {
       ...(smtpHost !== undefined ? { smtpHost: smtpHost || null } : {}),
       ...(smtpPort !== undefined ? { smtpPort } : {}),
       ...(smtpUser !== undefined ? { smtpUser: smtpUser || null } : {}),
-      ...(shouldUpdatePassword ? { smtpPass: nextPassword.trim() } : {}),
+      ...(encryptedPassword ? { smtpPass: encryptedPassword } : {}),
       ...(smtpFrom !== undefined ? { smtpFrom: smtpFrom || null } : {}),
       ...(smtpFromName !== undefined ? { smtpFromName: smtpFromName || null } : {}),
       ...(smtpSecure !== undefined ? { smtpSecure } : {}),
@@ -99,7 +108,7 @@ export async function PUT(request: NextRequest) {
             smtpHost: smtpHost || null,
             smtpPort: smtpPort || 587,
             smtpUser: smtpUser || null,
-            smtpPass: shouldUpdatePassword ? nextPassword.trim() : null,
+            smtpPass: encryptedPassword,
             smtpFrom: smtpFrom || null,
             smtpFromName: smtpFromName || 'Gestion DCAT',
             smtpSecure: smtpSecure ?? true,
