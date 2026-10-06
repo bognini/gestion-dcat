@@ -14,6 +14,8 @@ RUN npm install
 FROM base AS build-stage
 COPY --from=dependency-stage /app/node_modules ./node_modules
 COPY . .
+# La VM de prod n'a que ~1,8 Go de RAM : le tas par défaut (~950 Mo) ne suffit plus pour `next build`
+ENV NODE_OPTIONS=--max-old-space-size=2048
 RUN npm run build
 
 # Stage 3: Prisma Migration
